@@ -28,5 +28,5 @@ names:
   4: ignore
   5: person
   6: personCrowd
-  7: cyclist_S
-  8: cyclist_M
+  7: cyclist_Static
+  8: cyclist_Move
