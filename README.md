@@ -40,6 +40,34 @@ cd ../alt_cuda_corr_sparse
 python setup.py build install
 ```
 
+## :hourglass: Data preparation
+
+If you want to use a custom video dataset for training tests, it needs to be converted to yolo format for annotation, and the dataset files are organized in the following format:
+
+```
+data_root_dir/               # Root data directory
+├── test.txt                 # List of test data files, each line contains a relative path to an image file
+├── train.txt                # List of training data files, each line contains a relative path to an image file
+├── images/                  # Directory containing image files
+│   ├── video1/              # Directory for image files of the first video
+│   │   ├── 0000000.png      # First frame image file of the first video
+│   │   └── 0000001.png      # Second frame image file of the first video
+│   ├── video2/              # Directory for image files of the second video
+│   │   └── ...              # More image files
+│   └── ...                  # More video directories
+└── labels/                  # Directory containing label files
+    ├── video1/              # Directory for label files of the first video
+    │   ├── 0000000.txt      # Label file for the first frame of the first video (matches the image file)
+    │   └── 0000001.txt      # Label file for the second frame of the first video (matches the image file)
+    ├── video2/              # Directory for label files of the second video
+    │   └── ...              # More label files
+    └── ...                  # More video directories
+```
+
+
+Note: The name of the image and the name of the label in yolo format must be the same, and the format is frameNumber.png, e.g. "0000001.png and 0000001.txt".
+
+
 ## 🚀 Training
 
 ### One training session
