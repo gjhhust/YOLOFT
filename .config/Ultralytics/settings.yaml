@@ -1,0 +1,16 @@
+settings_version: 0.0.4
+datasets_dir: /data1/jiahaoguo/datasets
+weights_dir: /data1/jiahaoguo/ultralytics/weights
+runs_dir: /data1/jiahaoguo/ultralytics/runs
+uuid: bbc06a06c4273a0253ac4f5174317ff81e9c0b2be08f9977c99a108e705bd2f6
+sync: true
+api_key: ''
+clearml: true
+comet: true
+dvc: true
+hub: true
+mlflow: true
+neptune: true
+raytune: true
+tensorboard: true
+wandb: true

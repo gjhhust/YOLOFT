@@ -1,0 +1,33 @@
+# Ultralytics YOLO 🚀, AGPL-3.0 license
+datasetname: MOVEHomoDETDataset_stream #MOVEDETDataset MOVEHomoDETDataset_stream MOVEHomoDETDataset
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: /data/jiahaoguo/dataset/VisDrone2019-VID  # dataset root dir
+train: annotations/yolo_labels/train.txt  # train images (relative to 'path') 4 images
+val: annotations/yolo_labels/test.txt  # val images (relative to 'path') 4 images
+test:  annotations/yolo_labels/test.txt # test images (optional)
+labels_dir: annotations/yolo_labels/
+images_dir: images/
+val_reimgsz: True
+split_length: [8, 50]
+
+match_number: 1 
+interval: 1  
+rho: 4
+
+#coco eval
+eval_ann_json: /xxx/VisDrone2019-VID/annotations/test.json
+classes_map: [1,2,3,4,5,6,7,8,9,10,11,12] 
+# Classes
+names:
+  0: ignored regions
+  1: pedestrian
+  2: people
+  3: bicycle
+  4: car
+  5: van
+  6: truck
+  7: tricycle
+  8: awning-tricycle
+  9: bus
+  10: motor
+  11: other
