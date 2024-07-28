@@ -185,8 +185,8 @@ To evaluate the performance of other models, you can use the [eval tool](https:/
 
 | Model    | Params (M) | FLOPs (G) | Inference (ms) | Dataset | Checkpoint |
 |----------|------------|-----------|----------------|------------|------------|
-| YOLOFT-L | 45.16      | 230.14    | 36             | XS-VID | [yoloft-L.pt](https://drive.google.com/file/d/1tkJnfIPLqpXDnH1iyZfby-zM8xQ0aEU9/view?usp=sharing)|
-| YOLOFT-S | 53.58      | 13.02     | 16             | XS-VID | [yoloft-S.pt](https://drive.google.com/file/d/1-Vnm92bicMIy8RskEmnBFf2ScTzNrMD7/view?usp=sharing) |
+| YOLOFT-L | 45.16      | 230.14    | 36             | XS-VID | [yoloft-L.pt](https://drive.usercontent.google.com/download?id=1tkJnfIPLqpXDnH1iyZfby-zM8xQ0aEU9&export=downloa)|
+| YOLOFT-S | 53.58      | 13.02     | 16             | XS-VID | [yoloft-S.pt](https://drive.usercontent.google.com/u/0/uc?id=1-Vnm92bicMIy8RskEmnBFf2ScTzNrMD7&export=download) |
 
 ## :e-mail: Contact
 If you have any problems about this repo or XS-VID benchmark, please be free to contact us at gjh_hust@hust.edu.cn 😉
