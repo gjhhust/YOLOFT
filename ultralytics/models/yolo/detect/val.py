@@ -28,8 +28,8 @@ from ultralytics.utils.checks import check_imgsz
 from ultralytics.utils.files import increment_path
 from ultralytics.utils.ops import Profile
 from ultralytics.utils.torch_utils import de_parallel, select_device, smart_inference_mode
-from pycocotools.coco import COCO
-from pycocotools.cocoeval import COCOeval
+# from pycocotools.coco import COCO
+# from pycocotools.cocoeval import COCOeval
 import matplotlib.pyplot as plt
 from ultralytics.cfg import cfg2dict
 import cv2
@@ -96,72 +96,6 @@ class DetectionValidator(BaseValidator):
         self.metrics = DetMetrics(save_dir=self.save_dir, on_plot=self.on_plot)
         self.iouv = torch.linspace(0.5, 0.95, 10)  # iou vector for mAP@0.5:0.95
         self.niou = self.iouv.numel()
-
-        # self.data_yaml =  cfg2dict(args.data)
-        # if "eval_ann_json" in self.data_yaml:
-        #     self.is_coco = True
-        #     anno_json = self.data_yaml["eval_ann_json"]
-        #     if save_dir:
-        #         self.pred_json_path = os.path.join(save_dir,"coco_eval.json")
-        #     else:
-        #         work_dir = os.path.dirname(os.path.dirname(os.path.abspath(args.data)))
-        #         self.pred_json_path = os.path.join(work_dir,"run","coco_eval","coco_eval.json")
-        #     os.makedirs(self.pred_json_path,exist_ok=True)
-        #     self.cocoGt = COCO(anno_json)  # init annotations api
-        #     self.results = []
-
-    # add by guojiahao coco eval
-    def _reset_coco_eval(self,):
-        self.results = []
-
-    def updates_coco_eval(self, pred_bbox, pred_cls, pred_conf, target_cls, image_id, ori_shape, image_file):
-        '''
-        Args:
-        pred_bbox (torch.tensor n*4): 原图尺度预测框 xyxy
-        pred_cls (torch.tensor n*1): 预测类别
-        pred_conf (n*1): 预测得分
-        target_cls (n*1): 目标类别
-        '''
-        if "eval_ann_json" not in self.data_yaml:
-            return
-        
-        # 归一化坐标/ torch.tensor((width, height, width, height), device=self.device)
-        for i in range(min(len(pred_bbox),len(pred_cls))):
-            # 将检测结果保存到coco_json中
-            self.results.append({
-                'image_id': int(image_id),
-                "image_file": image_file, 
-                'category_id': int(pred_cls[i])+1,
-                'bbox': [float(pred_bbox[i][0]), float(pred_bbox[i][1]), float(pred_bbox[i][2]-pred_bbox[i][0]), float(pred_bbox[i][3] - pred_bbox[i][1])],
-                'score': float(pred_conf[i]),
-                'area': float(pred_bbox[i][2]-pred_bbox[i][0]) * float(pred_bbox[i][3] - pred_bbox[i][1])
-            })
-
-        pass
-
-
-    def get_result_coco_eval(self):
-
-        # # 保存json文件
-        # with open(os.path.join(self.pred_json_path), 'w') as f:
-        #     # indent=2 保存json文件时，缩进2个空格
-        #     json.dump(self.results, f, indent=2)
-        cocoDt = self.cocoGt.loadRes(self.results)
-        cocoEval = COCOeval(self.cocoGt, cocoDt, 'bbox')
-
-        visualize_annotations_cv2(self.cocoGt, cocoDt,"/data2/guojiahao/ultralytics/test/val")
-
-        # 执行评估
-        cocoEval.evaluate()
-        cocoEval.accumulate()
-        cocoEval.summarize()
-
-        # # 保存结果
-        # with open(os.path.dirname(self.pred_json_path)+"coco_eval.txt", 'w') as f:
-        #     f.write(str(cocoEval.stats))
-
-        # 打印结果
-        print(cocoEval.stats)
 
     def preprocess(self, batch):
         """Preprocesses batch of images for YOLO training."""

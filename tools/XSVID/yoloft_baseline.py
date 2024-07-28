@@ -2,7 +2,7 @@ import os
 import sys
 import datetime
 import yaml
-from ultralytics.models import FLOWFT
+from ultralytics.models import YOLOFT
 import os
 from analy_log import extract_best_results
 
@@ -73,7 +73,7 @@ def train_model(repeats, log_dir='./runs/logs'):
     for i in range(repeats):
         print(f"\nStarting training session {i+1}")
         try:
-            model = FLOWFT(model_config_path).load(pretrain_model)
+            model = YOLOFT(model_config_path).load(pretrain_model)
             results = model.train(data=dataset_config_path, cfg=training_config_path, batch=batch_size, epochs=epochs, imgsz=img_size, device=device, workers=workers)
             print(f"Training session {i+1} completed.")
         except Exception as e:

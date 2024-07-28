@@ -6,7 +6,7 @@ import numpy as np
 
 from ultralytics.data import build_dataloader, build_movedet_dataset,build_stream_dataloader
 from ultralytics.engine.trainer import BaseTrainer
-from ultralytics.models import flowft
+from ultralytics.models import yoloft
 from ultralytics.nn.modules import DetectMOVE
 from ultralytics.nn.tasks import MOVEDetectionModel
 from ultralytics.utils import DEFAULT_CFG, LOGGER, RANK
@@ -351,7 +351,7 @@ class DetectionTrainer(BaseTrainer):
 
                 
     def get_model(self, cfg=None, weights=None, verbose=True,p2_p4=False,p2_p5=False):
-        """Return a flowft detection model."""
+        """Return a yoloft detection model."""
         model = MOVEDetectionModel(cfg, nc=self.data['nc'], verbose=verbose and RANK == -1)
         if weights:
             if p2_p4:
@@ -381,7 +381,7 @@ class DetectionTrainer(BaseTrainer):
         if task_model.mode == "homo_loss":
             self.loss_names.append("homo_loss")
 
-        return flowft.detect.DetectionValidator(self.test_loader, save_dir=self.save_dir, args=copy(self.args))
+        return yoloft.detect.DetectionValidator(self.test_loader, save_dir=self.save_dir, args=copy(self.args))
 
     def label_loss_items(self, loss_items=None, prefix='train'):
         """

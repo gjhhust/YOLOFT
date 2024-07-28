@@ -3,7 +3,7 @@ import sys
 import datetime
 import yaml
 import pandas as pd
-from ultralytics.models import FLOWFT,YOLO
+from ultralytics.models import YOLOFT,YOLO
 from analy_log import extract_best_results
 
 
@@ -101,7 +101,7 @@ def train_model(model_config_dir, repeats,dataset_config_path, training_config_p
                 print(f"\nStarting training session {i+1}")
                 try:
                     if "flow" in model_config_path:
-                        model = FLOWFT(model_config_path).load(pretrain_model)
+                        model = YOLOFT(model_config_path).load(pretrain_model)
                     else:
                         model = YOLO(model_config_path).load(pretrain_model)
                     results = model.train(data=dataset_config_path, cfg=training_config_path, batch=batch_size, epochs=epochs, imgsz=img_size, device=device, workers=workers)

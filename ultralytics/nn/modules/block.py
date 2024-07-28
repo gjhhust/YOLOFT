@@ -6,7 +6,7 @@ Block modules
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import spconv.pytorch as spconv
+# import spconv.pytorch as spconv
 from .conv import Conv, DWConv, GhostConv, LightConv, RepConv, Conv2, DCNV3_conv,autopad,Conv_gn
 from .conv import Conv_onany as flow_conv
 print("now flow_conv:", flow_conv)
@@ -1644,8 +1644,8 @@ from ultralytics.nn.modules.flow import CorrBlock, AlternateCorrBlock, initializ
 import torch.nn.functional as F
 from torch.nn.init import xavier_uniform_, constant_, uniform_, normal_
 
-from ultralytics.nn.modules.ops.modules import MSDeformAttn
-from ultralytics.nn.modules.memory_buffer import from_coords_refpoint, from_refpoint_coords
+# from ultralytics.nn.modules.ops.modules import MSDeformAttn
+# from ultralytics.nn.modules.memory_buffer import from_coords_refpoint, from_refpoint_coords
 
 def _get_activation_fn(activation):
     """Return an activation function given a string"""

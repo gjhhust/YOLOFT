@@ -1,7 +1,7 @@
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 
 from ultralytics.engine.model import Model
-from ultralytics.models import flowft  # noqa
+from ultralytics.models import yoloft  # noqa
 from ultralytics.nn.tasks import MOVEDetectionModel, PoseModel, SegmentationModel
 import inspect
 import sys
@@ -20,9 +20,9 @@ from ultralytics.utils.torch_utils import smart_inference_mode
 
 
 
-class FLOWFT(Model):
+class YOLOFT(Model):
     """
-    FLOWFT (You Only Look Once) object detection model.
+    YOLOFT (You Only Look Once) object detection model.
     """
 
     @property
@@ -31,9 +31,9 @@ class FLOWFT(Model):
         return {
             'detect': {
                 'model': MOVEDetectionModel,
-                'trainer': flowft.detect.DetectionTrainer,
-                'validator': flowft.detect.DetectionValidator,
-                'predictor': flowft.detect.DetectionPredictor, },
+                'trainer': yoloft.detect.DetectionTrainer,
+                'validator': yoloft.detect.DetectionValidator,
+                'predictor': yoloft.detect.DetectionPredictor, },
              }
 
     def setup_model_train(self, trainer=None, **kwargs):

@@ -2,7 +2,7 @@ from thop import profile
 from ultralytics import RTDETR
 from ultralytics import YOLO
 import torch
-from ultralytics.models import FLOWFT
+from ultralytics.models import YOLOFT
 from ultralytics.nn.modules.block import Homograph
 from ultralytics.nn.modules.utils import transformer,homo_align
 from ultralytics.data.dataset import MOVEHomoDETDataset, MOVEHomoDETDataset_stream
@@ -36,8 +36,8 @@ import torch
 # params
 cfg = cfg2dict("config/train/orige_stream.yaml") #dict
 cfg = DictWrapper(cfg)
-data = cfg2dict("config/XS-VID+copy.yaml")
-model = FLOWFT('YoloftS_basline3_convnoany_epoch18s_epoch18_32.6(small AP best).pt')
+data = cfg2dict("config/XS-VID.yaml")
+model = YOLOFT('YoloftS_basline3_convnoany_epoch18s_epoch18_32.6(small AP best).pt')
 
 # load data
 dataset = MOVEHomoDETDataset_stream(

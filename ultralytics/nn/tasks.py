@@ -231,7 +231,7 @@ class BaseModel(nn.Module):
 
 
 class MOVEDetectionModel(BaseModel):
-    """FLOWFT detection model."""
+    """YOLOFT detection model."""
 
     def __init__(self, cfg='yolov8n.yaml', ch=3, nc=None, verbose=True):  # model, input channels, number of classes
         super().__init__()
@@ -837,7 +837,7 @@ def parse_model(d, ch, verbose=True):  # model_dict, input_channels(3)
     return nn.Sequential(*layers), sorted(save)
 
 def parse_motion_model(d, ch, verbose=True):  # model_dict, input_channels(3)
-    """Parse a FLOWFT model.yaml dictionary into a PyTorch model."""
+    """Parse a YOLOFT model.yaml dictionary into a PyTorch model."""
     import ast
 
     # Args

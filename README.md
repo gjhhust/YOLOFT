@@ -26,11 +26,12 @@ We have released several annotation formats to facilitate subsequent research an
 ## 🛠️ Install
 This repository is build on **[Ultralytics](https://github.com/ultralytics/ultralytics) 8.0.143**  which can be installed by running the following scripts. Please ensure that all dependencies have been satisfied before setting up the environment.
 ```
-conda create --name ultr python=3.8
-conda activate ultr
+conda create --name yoloft python=3.8
+conda activate yoloft
 pip install torch==1.12.1+cu113 torchvision==0.13.1+cu113 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu113
 git clone https://github.com/gjhhust/YOLOFT
 cd YOLOFT
+pip install -r requirements.txt 
 pip install -e .
 
 cd ./ultralytics/nn/modules/ops_dcnv3
@@ -72,7 +73,7 @@ Note: The name of the image and the name of the label in yolo format must be the
 
 ### One training session
 ```
-python tools/train_flowft.py
+python tools/train_yoloft.py
 ```
 Multiple GPUs please change devices
 
@@ -108,7 +109,7 @@ python tools/XSVID/analy_csv.py path/to/xxxx.csv
 
 ## 📈 Evaluation
 ```
-python tools/test_flowft.py
+python tools/test_yoloft.py
 ```
 
 

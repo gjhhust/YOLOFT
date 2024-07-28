@@ -2,5 +2,5 @@
 from .rtdetr import RTDETR
 from .sam import SAM
 from .yolo import YOLO
-from .flowft import FLOWFT
-__all__ = 'YOLO', 'RTDETR', 'SAM',"FLOWFT"  # allow simpler import
+from .yoloft import YOLOFT
+__all__ = 'YOLO', 'RTDETR', 'SAM',"YOLOFT"  # allow simpler import

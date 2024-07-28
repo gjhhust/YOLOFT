@@ -1,8 +1,8 @@
 from PIL import Image
 from ultralytics import RTDETR
 import os
-from ultralytics.models import FLOWFT
-from ultralytics.models import FLOWFT
+from ultralytics.models import YOLOFT
+from ultralytics.models import YOLOFT
 from ultralytics.nn.modules.block import Homograph
 from ultralytics.nn.modules.utils import transformer,homo_align
 from ultralytics.data.dataset import MOVEHomoDETDataset, MOVEHomoDETDataset_stream
@@ -39,10 +39,10 @@ data = cfg2dict("config/UAVTOD_[8,50].yaml")
 
 
 # Load a COCO-pretrained RT-DETR-l model
-model = FLOWFT('runs/UAVTOD_exper/baseline/baseline3/train94_36.4/weights/best.pt')  # load a custom model
-# model = FLOWFT("runs/detect/train150/weights/best.pt")
+model = YOLOFT('runs/UAVTOD_exper/baseline/baseline3/train94_36.4/weights/best.pt')  # load a custom model
+# model = YOLOFT("runs/detect/train150/weights/best.pt")
 model.model = model.model.cuda()
-show_image_prefix = "FLOWFT"
+show_image_prefix = "YOLOFT"
 
 # load data
 gs = int(max(max(model.model.stride), 32))

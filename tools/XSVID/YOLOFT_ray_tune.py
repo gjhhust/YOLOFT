@@ -4,7 +4,7 @@ import yaml
 import ray
 from ray import tune
 from ray.tune.schedulers import ASHAScheduler
-from ultralytics.models import FLOWFT
+from ultralytics.models import YOLOFT
 
 def read_yaml(path):
     """读取并返回 YAML 文件的内容"""
@@ -102,7 +102,7 @@ def train_model(config, model_config_path, training_config_path, dataset_config_
     sys.stdout = open(log_path, 'a')
     sys.stderr = open(log_path, 'a')
 
-    model = FLOWFT(model_config_path).load(config["pretrain"])
+    model = YOLOFT(model_config_path).load(config["pretrain"])
     model.setup_model_train(
         data=dataset_config_path,
         cfg=training_config_path,
