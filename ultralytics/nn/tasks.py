@@ -891,13 +891,6 @@ def parse_motion_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             if m is HGBlock:
                 args.insert(4, n)  # number of repeats
                 n = 1
-        elif m is stream: 
-            if args[1] == "fused":# args:[stream_name, mode, outc, block_name,block_params]
-                c1, c2 = ch[f[0]], args[2]
-                args = [args[0],args[1], c1, *args[2:]] # [stream_name, mode, inc, outc, block_name,block_params]
-            elif args[1] == "update": # args:[stream_name, mode]
-                c1, c2 = ch[f[0]], ch[f[0]]
-                args = [args[0],args[1],c1, c2]
         elif m is nn.BatchNorm2d:
             args = [ch[f]]
         elif m is Concat:
@@ -917,8 +910,6 @@ def parse_motion_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             c2 = args[3]
         elif m is get_data:
             c2 = args[1][-1] - args[1][0]
-        elif m is Homograph:
-            c2 = "dict"
         elif m is get_orige_data:
             assert args[-1] in m.output_dict, LOGGER.error(f"Homograph not key:{args[-1]} in this output")
             c2 = m.output_dict[args[-1]]
@@ -941,13 +932,13 @@ def parse_motion_model(d, ch, verbose=True):  # model_dict, input_channels(3)
                 c2 = ch[f[0]]
             else:
                 c2 = ch[f]*args[1]
-        elif m in (TCBA,MMB):
+        elif m is TCBA:
             # c1, c2 = ch[f[-1]], args[0] #f 0表示memory -1表示cur channel
             # args.insert(0, c1)
             c1, c2 = ch[f[1]], ch[f[1]]
             args[0] = ch[f[1]]
             args.insert(0, c1)
-        elif m in (MemoryAtten,VelocityNet,VelocityNet_baseline0,VelocityNet_baseline1,VelocityNet_baseline2,
+        elif m in (VelocityNet,VelocityNet_baseline0,VelocityNet_baseline1,VelocityNet_baseline2,
                    MSTF, VelocityNet_baseline3_singal_flow,VelocityNet_baseline3_split_dim,VelocityNet_baseline3_iter):
             c1 = [ch[f_] for f_ in f[1:]]
             c2 = [c1,1]
