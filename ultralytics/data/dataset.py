@@ -1103,6 +1103,7 @@ class MOVEHomoDETDataset_stream(MOVEHomoDETDataset):
         
         # self.show_transforms(orige_dict,trans_dict)
         trans_dict["index"] = index
+        trans_dict["img_metas"] = orige_dict["img_metas"]
         return trans_dict  
     
     def __len__(self):
@@ -1130,22 +1131,10 @@ class MOVEHomoDETDataset_stream(MOVEHomoDETDataset):
             new_batch['batch_idx'][i] += i  # add target image index for build_targets()
         new_batch['batch_idx'] = torch.cat(new_batch['batch_idx'], 0)
 
-        if "motion" in keys:
-            new_batch["img"] = {
-                "backbone":new_batch["img"],
-                "motion":{
-                    "org_imgs": new_batch["org_imgs"],
-                    "input_tensors": new_batch["input_tensors"],
-                    "patch_indices": new_batch["patch_indices"],
-                    "h4p": new_batch["h4p"]
-                },
-                "img_metas":new_batch["img_metas"]
-            }
-        else:
-            new_batch["img"] = {
-                "backbone":new_batch["img"],
-                "img_metas":new_batch["img_metas"]
-            }
+        new_batch["img"] = {
+            "backbone":new_batch["img"],
+            "img_metas":new_batch["img_metas"]
+        }
         # new_batch["cls"] = new_batch["is_moving"]
         return new_batch    
         
