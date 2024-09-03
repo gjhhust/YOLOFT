@@ -108,6 +108,16 @@ python tools/XSVID/analy_csv.py path/to/xxxx.csv
 
 Here's a brief usage guide for running the script:
 
+
+## 📈 Evaluation
+```
+python tools/test_yoloft.py
+```
+
+When **save_json=True**, evaluations in coco format will be output for training and testing, otherwise only Ultralytics' own results evaluations will be output
+
+To evaluate the performance of other models, you can use the [eval tool](https://github.com/gjhhust/XS-VID) 
+
 ### Predict videos script
 
 This script processes images or videos by loading data from the specified directories, applying a model for predictions, and saving the results and videos in the desired output directory. 
@@ -157,21 +167,11 @@ This script processes images or videos by loading data from the specified direct
      ```
    - **Usage**: Set `mode=muti` and `image_dir=/path/to/image_dir`.
 
-### convert to onnx
+### Convert to onnx
 
 ```bash
 yolo export model=./YOLOFT-L.pt  imgsz=1024,1024 format=onnx opset=12
 ```
-
-## 📈 Evaluation
-```
-python tools/test_yoloft.py
-```
-
-
-When **save_json=True**, evaluations in coco format will be output for training and testing, otherwise only Ultralytics' own results evaluations will be output
-
-To evaluate the performance of other models, you can use the [eval tool](https://github.com/gjhhust/XS-VID) 
 
 ## :trophy: Result
 
