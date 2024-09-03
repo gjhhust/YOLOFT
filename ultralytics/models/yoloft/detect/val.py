@@ -505,9 +505,9 @@ class DetectionValidator(BaseValidator):
                 eval = COCOeval(anno, pred, 'bbox')
                 # if self.is_coco:
                 #     eval.params.imgIds = [int(Path(x).stem) for x in self.dataloader.dataset.im_files]  # images to eval
-                eval.evaluate(print_log=print_log)
-                eval.accumulate(print_log=print_log)
-                eval.summarize(print_log=print_log)
+                eval.evaluate()
+                eval.accumulate()
+                eval.summarize()
                 # print(self.metrics.keys[-3],self.metrics.keys[-2], self.metrics.keys[-1])
                 # stats[self.metrics.keys[-2]], stats[self.metrics.keys[-1]], stats[self.metrics.keys[-3]]  = eval.stats[:3]  # update  mAP50-95 mAP75  mAP50
                 stats["metrics/mAP50-95(B)"] = eval.stats[0]

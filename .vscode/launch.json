@@ -38,7 +38,7 @@
         },
         {
             "name": "Python: test_movedet_L",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/tools/test_movedet_L.py",
             "console": "integratedTerminal",
@@ -46,10 +46,25 @@
         },
         {
             "name": "Python: test_yolov8_L",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/tools/test_yolov8.py",
             "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "Python: predict",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/tools/predict_yoloft.py",
+            "console": "integratedTerminal",
+            "args": [
+                "/data/jiahaoguo/dataset/UAVTOD_1/images",         // 替换为你的 image_dir 路径
+                "/data/jiahaoguo/YOLOFT/yoloft/train25/weights/best.pt",
+                "--save_dir", "/data/jiahaoguo/YOLOFT/runs/predict",   // 替换为你的 save_dir 路径
+                // "--eval_json", "/data/jiahaoguo/dataset/speed_merge/merge_test_1.json",  // 替换为你的 eval.json 路径
+                "--mode", "muti"                          // 或 "muti", 取决于你要测试的模式
+            ],
             "justMyCode": false
         }
     ]

@@ -14,7 +14,7 @@ def read_yaml(path):
 def get_file_name(path):
     return os.path.basename(path).split(".")[0]
 
-def train_model(repeats, log_dir='./runs/logs'):
+def train_model(repeats, model_config_path, pretrain_model, dataset_config_path, training_config_path, batch_size, epochs, img_size, workers, log_dir='./yoloft/logs'):
     # Ensure that the log directory exists
     os.makedirs(log_dir, exist_ok=True)
 
@@ -91,14 +91,14 @@ def train_model(repeats, log_dir='./runs/logs'):
 
 if __name__ == "__main__":
     # use export CUDA_VISIBLE_DEVICES=0,1,2,3
-    repeats = 10
+    repeats = 3
     model_config_path = "config/yoloft/yoloft-L.yaml"
     pretrain_model = "yolov8l.pt"
-    dataset_config_path = "config/dataset.yaml"
+    dataset_config_path = "config/target.yaml"
     training_config_path = "config/train/orige_stream.yaml"
-    batch_size = 22
-    epochs = 30
-    img_size = 1024 
+    batch_size = 12
+    epochs = 32
+    img_size = 896
     workers = 6
 
     train_model(repeats, model_config_path, pretrain_model, dataset_config_path, training_config_path, batch_size, epochs, img_size, workers)

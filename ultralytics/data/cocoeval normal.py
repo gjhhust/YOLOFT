@@ -6,7 +6,7 @@ import time
 from collections import defaultdict
 import copy
 from . import mask as maskUtils
-__author__ = 'guojiahaov2_0.75'
+__author__ = 'guojiahaov2.0'
 
 ############################
 
@@ -123,19 +123,21 @@ class COCOeval:
         self.evalImgs = defaultdict(list)   # per-image per-category evaluation results
         self.eval     = {}                  # accumulated evaluation results
 
-    def evaluate(self):
+    def evaluate(self,print_log=True):
         '''
         Run per image evaluation on given images and store results (a list of dict) in self.evalImgs
         :return: None
         '''
         tic = time.time()
-        print('Running per image evaluation...')
+        if print_log:
+            print('Running per image evaluation...')
         p = self.params
         # add backward compatibility if useSegm is specified in params
         if not p.useSegm is None:
             p.iouType = 'segm' if p.useSegm == 1 else 'bbox'
             print('useSegm (deprecated) is not None. Running {} evaluation'.format(p.iouType))
-        print('Evaluate annotation type *{}*'.format(p.iouType))
+        if print_log:
+            print('Evaluate annotation type *{}*'.format(p.iouType))
         p.imgIds = list(np.unique(p.imgIds))
         if p.useCats:
             p.catIds = list(np.unique(p.catIds))
@@ -163,7 +165,8 @@ class COCOeval:
              ]
         self._paramsEval = copy.deepcopy(self.params)
         toc = time.time()
-        print('DONE (t={:0.2f}s).'.format(toc-tic))
+        if print_log:
+            print('DONE (t={:0.2f}s).'.format(toc-tic))
 
     def computeIoU(self, imgId, catId):
         p = self.params
@@ -317,13 +320,14 @@ class COCOeval:
                 'dtIgnore':     dtIg,
             }
 
-    def accumulate(self, p = None):
+    def accumulate(self, p = None,print_log=True):
         '''
         Accumulate per image evaluation results and store the result in self.eval
         :param p: input params for evaluation
         :return: None
         '''
-        print('Accumulating evaluation results...')
+        if print_log:
+            print('Accumulating evaluation results...')
         tic = time.time()
         if not self.evalImgs:
             print('Please run evaluate() first')
@@ -422,9 +426,10 @@ class COCOeval:
             'scores': scores,
         }
         toc = time.time()
-        print('DONE (t={:0.2f}s).'.format( toc-tic))
+        if print_log:
+            print('DONE (t={:0.2f}s).'.format( toc-tic))
 
-    def summarize(self):
+    def summarize(self, print_log=True):
         '''
         Compute and display summary metrics for evaluation results.
         Note this functin can *only* be applied on the default parameter setting
@@ -458,11 +463,12 @@ class COCOeval:
                 mean_s = -1
             else:
                 mean_s = np.mean(s[s>-1])
-            print(iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s))
+            if print_log:
+                print(iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, mean_s))
             return mean_s
         def _summarizeDets():
-            start_index = 12 #所有指标的数目
-            number_summarize = 6 #每个面积指标数目
+            start_index = 12 #Number of all indicators
+            number_summarize = 6 #Number of indicators per area
             stats_print = np.zeros((3+len(self.params.areaRngLbl)-1,))
             stats = np.zeros((start_index+number_summarize*len(self.params.areaRngLbl),))
             stats[0] = _summarize(1)
@@ -471,13 +477,15 @@ class COCOeval:
             stats_print[0] = stats[0]
             stats_print[1] = stats[1]
             stats_print[2] = stats[2]
-            stats[3] = _summarize(1, iouThr=.75, areaRng='small', maxDets=self.params.maxDets[2])
-            stats[4] = _summarize(1, iouThr=.75, areaRng='medium', maxDets=self.params.maxDets[2])
-            stats[5] = _summarize(1, iouThr=.75, areaRng='large', maxDets=self.params.maxDets[2])
-            print("\n------------------------------------------")
+            stats[3] = _summarize(1, areaRng='small', maxDets=self.params.maxDets[2])
+            stats[4] = _summarize(1, areaRng='medium', maxDets=self.params.maxDets[2])
+            stats[5] = _summarize(1, areaRng='large', maxDets=self.params.maxDets[2])
+            if print_log:
+                print("\n------------------------------------------")
             for i, areaRngLbl in enumerate(self.params.areaRngLbl[1:]):
-                stats_print[3+i] = _summarize(1, iouThr=.75, areaRng=areaRngLbl, maxDets=self.params.maxDets[2])
-            print("\n------------------------------------------")
+                stats_print[3+i] = _summarize(1, areaRng=areaRngLbl, maxDets=self.params.maxDets[2])
+            if print_log:
+                print("\n------------------------------------------")
             stats[6] = _summarize(0, maxDets=self.params.maxDets[0])
             stats[7] = _summarize(0, maxDets=self.params.maxDets[1])
             stats[8] = _summarize(0, maxDets=self.params.maxDets[2])
@@ -485,7 +493,6 @@ class COCOeval:
             stats[10] = _summarize(0, areaRng='medium', maxDets=self.params.maxDets[2])
             stats[11] = _summarize(0, areaRng='large', maxDets=self.params.maxDets[2])
             
-            # 所有
             # stats[0] = _summarize(1)
             # stats[1] = _summarize(1, iouThr=.5, maxDets=self.params.maxDets[2])
             # stats[2] = _summarize(1, iouThr=.75, maxDets=self.params.maxDets[2])
@@ -498,7 +505,6 @@ class COCOeval:
             # print(stats[3])
             # print(stats[4])
             # print(stats[5])
-            # # 不同面积分别计算指标
             # print_j = [0,1,2]
             # print_name = ["AP-ALL","AP-ALL0.5","AP-ALL0.75"]
             # for i, areaRngLbl in enumerate(self.params.areaRngLbl):
@@ -514,9 +520,9 @@ class COCOeval:
             #     stats[j+5] = _summarize(0, areaRng=areaRngLbl, maxDets=self.params.maxDets[2])
 
             def print_formatted_stats(stats):
-                # 数字乘以100后保留一位小数
+                # Multiplying a number by 100 and retaining one decimal place
                 formatted_stats = [f"{num * 100:.1f}" for num in stats]
-                # 使用空格连接数组中的元素并打印
+                # Use spaces to concatenate elements in an array and print them
                 print(" ".join(formatted_stats))
 
             print("\n********ALL, 0.75, 0.5, 0-12, 12-20, 20-32, small, medium, large*********************************")

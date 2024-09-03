@@ -1126,12 +1126,10 @@ class get_orige_data(nn.Module):
             if isinstance(x, dict):
                 return x
             else:
-                if x.size()[1:] == (3,256,256) or x.size()[1:] == (3,640,640):#info
-                    return {
-                        "backbone":torch.ones_like(x).to(x.device),
-                        "motion":  x.device,
-                        "img_metas": [{"is_first":True,"epoch":0}],
-                    }
+                return {
+                    "backbone":x.clone(),
+                    "img_metas": [{"is_first":False,"epoch":0}],
+                }
 
         elif self.mode == "backbone": 
             return x[self.mode].clone()
@@ -2254,7 +2252,7 @@ class MSTF(nn.Module): #
             
             if fmaps_new[0].device.type == "cpu" or (img_metas[0]["epoch"] < self.epoch_train and self.training) or self.epoch_train == 100:
                 if self.epoch_train == 100:
-                    return x[1:], {"k":0.1, "loss":torch.tensor(0.0)}
+                    return x[1:]
                 outs = []
                 for i in range(self.n_levels):
                     out, fmap = self.convs1[i](x[1:][i]).chunk(2, 1)
@@ -2262,7 +2260,7 @@ class MSTF(nn.Module): #
                     # fmap = self.convs1[i](fmap) #hidden
                     out = self.convs2[i](torch.cat([out,fmap,torch.relu(fmap)], 1))
                     outs.append(out)
-                return outs, {"k":0.1, "loss":torch.tensor(0.0)}
+                return outs
 
             
             # Gradient triage, dimensional consistency
@@ -2346,7 +2344,7 @@ class MSTF(nn.Module): #
                 if not self.training and self.plot:
                     np.save(os.path.join(feature_fused_dir,  f'level_{i}_{frame_number}.npy'), fmaps_new[i].cpu().numpy())
 
-            return fmaps_new, {"k":0.1, "loss":torch.tensor(0.0).to(net_32.device)}
+            return fmaps_new
             
 
 class VelocityNet_baseline3_split_dim(MSTF): #

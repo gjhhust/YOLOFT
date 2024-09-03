@@ -237,6 +237,7 @@ import math
 from copy import deepcopy
 import random
 import time,json
+import re
 #add by guojiahao
 class MOVEDETDataset(BaseDataset):
     """
@@ -326,8 +327,9 @@ class MOVEDETDataset(BaseDataset):
             # Get the full division of self.interval interval for each video
             for video_name,video_list in video_image_dict.items():
                 video_length = len(video_list)-1
-                max_rate = video_length//length + 1
+                max_rate = video_length//min(length, video_length) + 1
                 split_length = random.choice([video_length//rate for rate in range(1,max_rate)])
+    
                 for i in range(self.interval):
                     sub_interval_list = video_list[i::self.interval]
                     sub_interval_length_list = [sub_interval_list[i:i + split_length] for i in range(0, len(sub_interval_list), split_length)]
@@ -456,7 +458,13 @@ class MOVEDETDataset(BaseDataset):
         for i,image_path in enumerate(im_files):
             video_name = os.path.basename(os.path.dirname(image_path))
             image_name = os.path.splitext(os.path.basename(image_path))[0]
-            frame_num = int(image_name.split('_')[-1]) # Assuming the video name is the first part of the filename separated by '_'
+            frame_num_string = image_name.split('_')[-1] # Assuming the video name is the first part of the filename separated by '_'
+            # Extract numeric parts using regular expressions
+            match = re.search(r'\d+', frame_num_string)
+            digits = match.group()
+            frame_num = int(digits)
+            # print(f"string: {frame_num_string} -> {frame_num}")
+            
             if video_name not in video_image_dict:
                 video_image_dict[video_name] = []
             video_image_dict[video_name].append({

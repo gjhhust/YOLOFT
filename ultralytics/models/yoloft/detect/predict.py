@@ -21,8 +21,10 @@ import cv2
 import numpy as np
 import torch
 import os,json
-from PIL import Image
+
 import gc
+
+
 class DetectionPredictor(BasePredictor):
 
     def postprocess(self, preds, img, orig_imgs):
@@ -128,10 +130,7 @@ class DetectionPredictor(BasePredictor):
         bar = tqdm(source, total=n_batches, bar_format=TQDM_BAR_FORMAT)
 
         self.run_callbacks('on_predict_start')
-        # Show the results
-        save_dir  = "/data/jiahaoguo/ultralytics/runs/UAVTOD_exper/baseline/baseline3/train94_36.4/show/"
-
-        json_results = []
+        
         for batch_i, batch in enumerate(bar):
             self.run_callbacks('on_predict_batch_start')
             # if batch_i>10:
@@ -162,7 +161,7 @@ class DetectionPredictor(BasePredictor):
                     'inference': profilers[1].dt * 1E3 / n,
                     'postprocess': profilers[2].dt * 1E3 / n}
                 p, im, im0 = path[i], im["backbone"][i].clone(), None
-                batch_info = batch["img_metas"][i]
+                batch_info = im0s["img_metas"][i]
                 p = Path(p)
 
                 if self.args.verbose or self.args.save or self.args.save_txt or self.args.show:
@@ -180,27 +179,9 @@ class DetectionPredictor(BasePredictor):
             # Print time (inference-only)
             if self.args.verbose:
                 LOGGER.info(f'{s}{profilers[1].dt * 1E3:.1f}ms')
+            yield from self.results
 
-            for i,result in enumerate(self.results):
-                ######################plot pred###################
-                # path = result.path
-                # file_name = os.path.join(save_dir, os.path.basename(os.path.dirname(path)),os.path.basename(path))
-                # im_array = result.plot(line_width=1).astype(np.uint8)  # plot a BGR numpy array of predictions
-                # im = Image.fromarray(im_array)  # RGB PIL image
-                # os.makedirs(os.path.dirname(file_name), exist_ok=True)
-                # im.save(file_name)  # save image
-                ######################save pred###################
-                for bbox_ in result.boxes:
-                    json_results.append({
-                    'image_id': batch["image_id"][i],
-                    'category_id': int(bbox_.cls[0])+1,
-                    'bbox_xyxy': [round(float(x), 3) for x in bbox_.xyxy[0]],
-                    'score': round(float(bbox_.conf[0]), 3)})
-            # yield from self.results
-
-        with open(os.path.join(save_dir, "predict.json"), 'w') as f:
-            # indent=2 保存json文件时，缩进2个空格
-            json.dump(json_results, f, indent=2)
+        
         # # Release assets
         # if isinstance(self.vid_writer[-1], cv2.VideoWriter):
         #     self.vid_writer[-1].release()  # release final video writer

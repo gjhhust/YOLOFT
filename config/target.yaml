@@ -1,0 +1,24 @@
+# Ultralytics YOLO 🚀, AGPL-3.0 license
+datasetname: MOVEHomoDETDataset_stream #MOVEDETDataset MOVEHomoDETDataset_stream MOVEHomoDETDataset
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: /data/jiahaoguo/dataset/speed_merge  # dataset root dir
+train: train.txt  # train images (relative to 'path') 4 images
+val: test.txt  # val images (relative to 'path') 4 images
+test:  test.txt # test images (optional)
+labels_dir: yolo/
+images_dir: images/
+val_reimgsz: True
+split_length: [8, 150] #Segment training using 8 first, then 50, "all" for no cuts
+
+match_number: 1 
+interval: 1    # Get the current frame of the frame interval
+
+rho: 4
+
+#coco eval
+eval_ann_json: /data/jiahaoguo/dataset/speed_merge/merge_test_1.json
+classes_map: [1] #Map the categories of the network output to the index corresponding to the following names  
+
+# Classes
+names:
+  0: target

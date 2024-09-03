@@ -3,9 +3,6 @@ from ultralytics import RTDETR
 import os
 from ultralytics.models import YOLOFT
 from ultralytics.models import YOLOFT
-from ultralytics.nn.modules.block import Homograph
-from ultralytics.nn.modules.utils import transformer,homo_align
-from ultralytics.data.dataset import MOVEHomoDETDataset, MOVEHomoDETDataset_stream
 from ultralytics.data.build import build_stream_dataloader,build_movedet_dataset
 from torch.utils.data import DataLoader
 from ultralytics.cfg import cfg2dict
@@ -35,11 +32,11 @@ import torch
 
 cfg = cfg2dict("config/train/orige_stream.yaml") #dict
 cfg = DictWrapper(cfg)
-data = cfg2dict("config/UAVTOD_[8,50].yaml")
+data = cfg2dict("/data/jiahaoguo/YOLOFT/config/XS-VID.yaml")
 
 
 # Load a COCO-pretrained RT-DETR-l model
-model = YOLOFT('runs/UAVTOD_exper/baseline/baseline3/train94_36.4/weights/best.pt')  # load a custom model
+model = YOLOFT('/data/jiahaoguo/YOLOFT/yoloft/train25/weights/best.pt')  # load a custom model
 # model = YOLOFT("runs/detect/train150/weights/best.pt")
 model.model = model.model.cuda()
 show_image_prefix = "YOLOFT"

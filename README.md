@@ -106,6 +106,62 @@ Eventually, we will get all the log files of the comparison experiments and a cs
 python tools/XSVID/analy_csv.py path/to/xxxx.csv
 ```
 
+Here's a brief usage guide for running the script:
+
+### Predict videos script
+
+This script processes images or videos by loading data from the specified directories, applying a model for predictions, and saving the results and videos in the desired output directory. 
+
+#### Command-line Arguments
+
+- **`image_dir`**: (Required) Path to the directory containing images or subdirectories of images. If the `--mode` is set to `'one'`, this should be a directory containing all images. If set to `'muti'`, this should be a directory containing subdirectories, where each subdirectory represents a video.
+  
+- **`checkpoint`**: (Required) Path to the model checkpoint that will be used for predictions.
+
+- **`--save_dir`**: (Required) Path to the directory where prediction results and generated videos will be saved.
+
+- **`--mode`**: (Required) Mode of operation. Choices are:
+  - `'one'`: The `image_dir` contains all images to be processed.
+  - `'muti'`: The `image_dir` contains multiple subdirectories, with each subdirectory corresponding to a different video.
+
+- **`--eval_json`**: (Optional) Path to the evaluation JSON file for model evaluation.
+
+#### Example Command
+
+1. **Mode: `one`**
+   - **Description**: Use this mode when all image files are directly inside a single directory.
+   - **File Structure Example**:
+     ```
+     /path/to/image_dir/            # Directory to be set as image_dir
+     ├── frame1.png
+     ├── frame2.png
+     ├── frame3.png
+     └── ...
+     ```
+   - **Usage**: Set `mode=one` and `image_dir=/path/to/image_dir`.
+
+2. **Mode: `muti`**
+   - **Description**: Use this mode when the directory contains multiple subdirectories, each representing a different video.
+   - **File Structure Example**:
+     ```
+     /path/to/image_dir/            # Directory to be set as image_dir
+     ├── video1/                    # Subdirectory for the first video
+     │   ├── frame1.png
+     │   ├── frame2.png
+     │   └── ...
+     ├── video2/                    # Subdirectory for the second video
+     │   ├── frame1.png
+     │   ├── frame2.png
+     │   └── ...
+     └── ...
+     ```
+   - **Usage**: Set `mode=muti` and `image_dir=/path/to/image_dir`.
+
+### convert to onnx
+
+```bash
+yolo export model=./YOLOFT-L.pt  imgsz=1024,1024 format=onnx opset=12
+```
 
 ## 📈 Evaluation
 ```

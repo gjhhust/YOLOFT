@@ -1,11 +1,11 @@
 # Ultralytics YOLO 🚀, AGPL-3.0 license
 datasetname: MOVEHomoDETDataset_stream #MOVEDETDataset MOVEHomoDETDataset_stream MOVEHomoDETDataset
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
-path: /path/to/dataset/XS-VID  # dataset root dir
-train: all/yolo/train.txt  # train images (relative to 'path') 4 images
-val: all/yolo/test.txt  # val images (relative to 'path') 4 images
-test:  all/yolo/test.txt # test images (optional)
-labels_dir: all/yolo/
+path: /data/jiahaoguo/dataset/XS-VID  # dataset root dir
+train: all_fix/yolo/train.txt  # train images (relative to 'path') 4 images
+val: all_fix/yolo/test.txt  # val images (relative to 'path') 4 images
+test:  all_fix/yolo/test.txt # test images (optional)
+labels_dir: all_fix/yolo/
 images_dir: images/
 val_reimgsz: True
 split_length: [8, 50] #Segment training using 8 first, then 50, "all" for no cuts
@@ -16,7 +16,7 @@ interval: 1    # Get the current frame of the frame interval
 rho: 4
 
 #coco eval
-eval_ann_json: /path/to/dataset/XS-VID/coco/test.json
+eval_ann_json: /data/jiahaoguo/dataset/XS-VID/coco/test.json
 classes_map: [1,2,3,4,5,6,7,8,9] #Map the categories of the network output to the index corresponding to the following names  
 
 # Classes

@@ -18,7 +18,9 @@ def extract_best_results(log_file, experiment_name="experiment_1", experiment_to
     next_is_results = False
     save_dir = None
     time_info = None
-
+    current_epoch = None
+    total_epochs = None
+    
     for i, line in enumerate(lines):
         start_match = start_training_pattern.search(line)
         if re.search(f"Training session {experiment_total} completed", line):
@@ -94,7 +96,7 @@ def extract_best_results(log_file, experiment_name="experiment_1", experiment_to
             session_results = [result for result in results if result['session'] == session]
             session_best = max(session_results, key=lambda x: (x['AP-ALL'], x['AP-0.75']))
 
-            if session_results[session_results.index(session_best) - 1]['epoch'] == session_best['epoch']:
+            if session_results[session_results.index(session_best) - 1]['epoch'] == session_best['epoch'] and session_best['epoch'] is not None:
                 session_best['epoch'] += 1
 
             print("\n")

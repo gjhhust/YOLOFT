@@ -29,7 +29,7 @@ class DetectMOVE(nn.Module):
     
     def __init__(self, nc=80, mode="normal", ch=()):  # detection layer
         super().__init__()
-        self.use_auxloss = True
+        self.use_auxloss = False
         self.nc = nc  # number of classes
         if self.use_auxloss:
             ch = ch[:-1]
@@ -63,8 +63,8 @@ class DetectMOVE(nn.Module):
                 self.anchors, self.strides = (x.transpose(0, 1) for x in make_anchors(x, self.stride, 0.5))
             self.shape = shape
 
-        loss = x[self.nl:]
-        x = x[:self.nl]
+        # loss = x[self.nl:]
+        # x = x[:self.nl]
         
         x_cat = torch.cat([xi.view(shape[0], self.no, -1) for xi in x], 2)
         if self.export and self.format in ('saved_model', 'pb', 'tflite', 'edgetpu', 'tfjs'):  # avoid TF FlexSplitV ops
@@ -84,7 +84,7 @@ class DetectMOVE(nn.Module):
             dbox /= img_size
 
         y = torch.cat((dbox, cls.sigmoid()), 1)
-        x.extend(loss)
+        # x.extend(loss)
         
         return y if self.export else (y, x)
 
@@ -106,7 +106,7 @@ class Detect(nn.Module):
     anchors = torch.empty(0)  # init
     strides = torch.empty(0)  # init
     
-    def __init__(self, nc=80, mode="normal", ch=()):  # detection layer
+    def __init__(self, nc=80, ch=()):  # detection layer
         super().__init__()
         self.nc = nc  # number of classes
         self.nl = len(ch)  # number of detection layers
@@ -119,10 +119,6 @@ class Detect(nn.Module):
             nn.Sequential(Conv(x, c2, 3), Conv(c2, c2, 3), nn.Conv2d(c2, 4 * self.reg_max, 1)) for x in ch)
         self.cv3 = nn.ModuleList(nn.Sequential(Conv(x, c3, 3), Conv(c3, c3, 3), nn.Conv2d(c3, self.nc, 1)) for x in ch)
         self.dfl = DFL(self.reg_max) if self.reg_max > 1 else nn.Identity()
-        self.mode = mode
-        if self.mode == "savebbox":
-            self.buffer = FeatureBuffer("MemoryAtten") #save topk bbox
-            self.topkbbox = 100
 
     def forward(self, x):
         """Concatenates and returns predicted bounding boxes and class probabilities."""

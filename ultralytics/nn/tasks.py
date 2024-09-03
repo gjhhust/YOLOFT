@@ -248,14 +248,14 @@ class MOVEDetectionModel(BaseModel):
 
         # Build strides
         m = self.model[-1]  # Detect()
-        self.mode = m.mode
+        self.mode = getattr(m, "mode", "normal")
         if isinstance(m, (DetectMOVE, Detect, Segment, Pose)):
             s = 256  # 2x min stride
             m.inplace = self.inplace
             if isinstance(m, (Segment, Pose)):
                 forward = lambda x: self.forward(x)[0]
             elif isinstance(m, (DetectMOVE)):
-                forward = lambda x: self.forward(x)[:-1]
+                forward = lambda x: self.forward(x)
             else:
                 forward = lambda x: self.forward(x)
 
@@ -941,7 +941,7 @@ def parse_motion_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         elif m in (VelocityNet,VelocityNet_baseline0,VelocityNet_baseline1,VelocityNet_baseline2,
                    MSTF, VelocityNet_baseline3_singal_flow,VelocityNet_baseline3_split_dim,VelocityNet_baseline3_iter):
             c1 = [ch[f_] for f_ in f[1:]]
-            c2 = [c1,1]
+            c2 = c1
             args.insert(0, c1)
         elif m is ChannelAttention:
             c1 = ch[f]

@@ -433,13 +433,16 @@ class FlowBuffer(object):
             self.reset_all(b)
 
         # Initialized when coords_orige is None or inconsistent.
-        if self.coords0 is None or (self.coords0 is not None and torch.equal(self.spatial_shapes,spatial_shapes)):
+        if self.spatial_shapes is None or (not torch.equal(self.spatial_shapes,spatial_shapes)):
             # self.coords_orige, self.ref_points_orige = self.initialize_point(self.bs, spatial_shapes, memory[0][0].device)
             self.coords0 = self.initialize_point(self.bs, spatial_shapes)
             self.coords0 = self.flatten(self.coords0)
             self.spatial_shapes = spatial_shapes.clone()
             self.coords1 = self.coords0.clone()
-
+            
+            self.net = torch.tanh(memory_flatten).detach()
+            self.memory_fmaps = memory_flatten.detach()
+                            
         result_first_frame = [img_metas[i]["is_first"] for i in range(b)]
 
         if self.memory_fmaps is None:

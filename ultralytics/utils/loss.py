@@ -746,7 +746,7 @@ class v8DetectionLoss:
             self.buffer = m.buffer
             self.topkbbox = m.topkbbox
         
-        self.mode = m .mode
+        self.mode = getattr(m, "mode", "normal")
         self.bce = nn.BCEWithLogitsLoss(reduction='none')
         self.hyp = h
         self.stride = m.stride  # model strides

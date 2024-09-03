@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+.vscode
 
 ultralytics/nn/ops_dcnv3/build
 # C extensions
@@ -14,6 +14,7 @@ show_pipeline
 show_piple
 runs
 run
+yoloft
 # Distribution / packaging
 .Python
 build/
