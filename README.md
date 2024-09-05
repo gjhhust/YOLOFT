@@ -142,30 +142,30 @@ This script processes images or videos by loading data from the specified direct
    - **Description**: Use this mode when all image files are directly inside a single directory.
    - **File Structure Example**:
      ```
-     /path/to/image_dir/            # Directory to be set as image_dir
-     ├── frame1.png
-     ├── frame2.png
-     ├── frame3.png
+     /path/to/video_name/            # Directory to be set as image_dir
+     ├── 000001.png
+     ├── 000002.png
+     ├── 000003.png
      └── ...
      ```
-   - **Usage**: Set `mode=one` and `image_dir=/path/to/image_dir`.
+   - **Usage**: Set `mode=one` and `image_dir=/path/to/video_name`.
 
 2. **Mode: `muti`**
    - **Description**: Use this mode when the directory contains multiple subdirectories, each representing a different video.
    - **File Structure Example**:
      ```
-     /path/to/image_dir/            # Directory to be set as image_dir
-     ├── video1/                    # Subdirectory for the first video
-     │   ├── frame1.png
-     │   ├── frame2.png
+     /path/to/videos_dir/            # Directory to be set as image_dir
+     ├── video_name1/                    # Subdirectory for the first video
+     │   ├── 000001.png
+     │   ├── 000002.png
      │   └── ...
-     ├── video2/                    # Subdirectory for the second video
-     │   ├── frame1.png
-     │   ├── frame2.png
+     ├── video_name2/                    # Subdirectory for the second video
+     │   ├── 000001.png
+     │   ├── 000002.png
      │   └── ...
      └── ...
      ```
-   - **Usage**: Set `mode=muti` and `image_dir=/path/to/image_dir`.
+   - **Usage**: Set `mode=muti` and `image_dir=/path/to/videos_dir`.
 
 ### Convert to onnx
 
