@@ -150,6 +150,10 @@ This script processes images or videos by loading data from the specified direct
      ```
    - **Usage**: Set `mode=one` and `image_dir=/path/to/video_name`.
 
+    ```bash
+    python tools/predict_yoloft.py /path/to/video_name yoloft-L.pt --save_dir /path/to/save --mode one
+    ```
+
 2. **Mode: `muti`**
    - **Description**: Use this mode when the directory contains multiple subdirectories, each representing a different video.
    - **File Structure Example**:
@@ -166,6 +170,10 @@ This script processes images or videos by loading data from the specified direct
      └── ...
      ```
    - **Usage**: Set `mode=muti` and `image_dir=/path/to/videos_dir`.
+
+    ```bash
+    python tools/predict_yoloft.py /path/to/videos_dir yoloft-L.pt --save_dir /path/to/save --mode muti
+    ```
 
 ### Convert to onnx
 
