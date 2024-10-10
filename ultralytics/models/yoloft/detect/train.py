@@ -141,17 +141,7 @@ class DetectionTrainer(BaseTrainer):
                     self.train_loader.dataset.end_train_all_video()   
                 self.train_loader.reset()
                 
-            if epoch==0:
-                # save starting parameter
-                if hasattr(self.train_loader.dataset, '_set_orige_paramters'):
-                    self.train_loader.dataset._set_orige_paramters(hyp=self.args)
-
-            if epoch == self.args.train_slit and self.args.train_method == "memory-all":
-                LOGGER.info('start train all')
-                if hasattr(self.train_loader.dataset, '_train_all'):
-                    self.train_loader.dataset._train_all(hyp=self.args,model=self.model)
-                self.train_loader.reset()
-            elif epoch == self.args.train_slit and self.args.train_method == "random-all":
+            if epoch == self.args.train_slit and self.args.train_method == "random-all":
                 LOGGER.info('start train video')
                 if hasattr(self.train_loader.dataset, '_train_video'):
                     self.train_loader.dataset._train_video(hyp=self.args)
@@ -160,7 +150,12 @@ class DetectionTrainer(BaseTrainer):
                 LOGGER.info('start train backbone')
                 if hasattr(self.train_loader.dataset, '_train_backbone'):
                     self.train_loader.dataset._train_backbone(hyp=self.args)
-                self.train_loader.reset()       
+                self.train_loader.reset()   
+            elif epoch == 0:
+                LOGGER.info('train all')
+                if hasattr(self.train_loader.dataset, '_train_all'):
+                    self.train_loader.dataset._train_all(hyp=self.args)
+                self.train_loader.reset()   
                 
 
             if RANK in (-1, 0):

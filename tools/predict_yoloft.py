@@ -35,6 +35,7 @@ def get_imgMeta(image_path):
             "frame_number":frame_num,
             "video_name":video_name,
             "epoch":0, # dont change
+            "image_path":image_path,
         }
     return img_metas
 
@@ -74,6 +75,28 @@ def pad_to_32_multiple(image):
     # Return the padded image and padding information
     padding_info = {'top': top, 'bottom': bottom, 'left': left, 'right': right}
     return padded_image, padding_info
+
+def restore_from_padding(padded_image, padding_info):
+    """
+    Removes padding from the input image using the provided padding information.
+
+    Parameters:
+    - padded_image: The padded image (NumPy array)
+    - padding_info: Dictionary containing the number of pixels padded at the top, bottom, left, and right
+
+    Returns:
+    - original_image: The original image after removing the padding (NumPy array)
+    """
+    # 获取填充信息
+    top = padding_info['top']
+    bottom = padding_info['bottom']
+    left = padding_info['left']
+    right = padding_info['right']
+
+    # 去除填充，恢复原始图像
+    original_image = padded_image[top:padded_image.shape[0]-bottom, left:padded_image.shape[1]-right]
+
+    return original_image
 
 def map_bbox_to_original(padding_info, padded_bbox):
     """
@@ -135,9 +158,14 @@ def image_paths_2_predictdatas(image_paths, eval_json=None):
             img_metas["is_first"] = False
             
         if eval_json:
-            image_id = path_id_maps[abspath_to_filename(path)]
+            if abspath_to_filename(path) not in path_id_maps: #images have, ann not
+                continue
+            else:
+                image_id = path_id_maps[abspath_to_filename(path)]
         else:
             image_id = 0
+            
+        img_metas["padding_info"] = padding_info
         datas.append({
             "im_file": [path], 
             "img": {
@@ -145,8 +173,9 @@ def image_paths_2_predictdatas(image_paths, eval_json=None):
                 "img_metas":[img_metas],
             },
             "image_id": [image_id],
-            "padding_info": padding_info
         })
+    
+    datas[0]["img"]["img_metas"][0]["is_first"] = True 
     return datas 
     
 def predict(args):  
@@ -165,16 +194,37 @@ def predict(args):
     print(f"frame number: {img_metas['frame_number']}, video name: {img_metas['video_name']}")
     print("!!!!!!!!!!!!!!!!!!!\n")
     
+    if args.eval_json:
+        with open(args.eval_json, 'r') as f:
+            coco_data = json.load(f)
+        eval_video_names = [v["name"] for v in coco_data["videos"]] #coco json must cocoVID format https://mmtracking.readthedocs.io/zh-cn/latest/tutorials/customize_dataset.html
+        video_dirs = [vd for vd in video_dirs if os.path.basename(vd) in eval_video_names] #only eval video in json
+        
     print(f"scan total video: {len(video_dirs)}")
     json_results = []
     os.makedirs(args.save_dir, exist_ok=True)
+    # Load model
+    model = YOLOFT(args.checkpoint)  # load a custom model
+    model.model = model.model.cuda()
+    model.model.eval()
+    
+    if args.save_heatmap:
+        from ultralytics.nn.modules import MSTF
+        for m in model.model.model:
+            if type(m) is MSTF: #set plot params
+                m.plot = True
+                m.save_dir = os.path.join(args.save_dir, "heatmaps")
+                m.pad_image_func = pad_to_32_multiple
+                os.makedirs(m.save_dir, exist_ok=True)
+                
     for video_dir in tqdm(video_dirs):
+        # if "Scene46" not in video_dir:
+        #     continue
         image_paths = get_image_paths(video_dir)
         predict_datas = image_paths_2_predictdatas(image_paths, args.eval_json)
-        # Load a COCO-pretrained RT-DETR-l model
-        model = YOLOFT(args.checkpoint)  # load a custom model
-        model.model = model.model.cuda()
+
         results = model(predict_datas)
+
 
         first_im_array = predict_datas[0]["img"]["backbone"]
         _, layers, height, width = first_im_array.shape
@@ -195,7 +245,7 @@ def predict(args):
             if args.eval_json:
                 for bbox_ in result.boxes:
                     bbox_xyxy = [round(float(x), 3) for x in bbox_.xyxy[0]]
-                    bbox_xyxy = map_bbox_to_original(predict_datas[i]["padding_info"], bbox_xyxy)
+                    bbox_xyxy = map_bbox_to_original(predict_datas[i]["img"]["img_metas"][0]["padding_info"], bbox_xyxy)
                     bbox = [bbox_xyxy[0], bbox_xyxy[1], bbox_xyxy[2]-bbox_xyxy[0], bbox_xyxy[3]-bbox_xyxy[1]]
                     json_results.append({
                     'image_id': predict_datas[i]["image_id"][0],
@@ -217,6 +267,8 @@ def parse_args():
     parser.add_argument('--save_dir', type=str, required=True, help="Directory where prediction results and videos will be saved.")
     parser.add_argument('--mode', type=str, required=True, choices=['one', 'muti'], help="Mode of operation: 'one' if image_dir contains all images, 'muti' if image_dir contains subdirectories for each video.")
     parser.add_argument('--eval_json', type=str, help="Path to the evaluation JSON file.")
+    parser.add_argument('--save_heatmap', action='store_true', help='heatmap plot, will save heatmap videos in save_dir/heatmaps/')
+
     return parser.parse_args()
 
 if __name__ == "__main__":

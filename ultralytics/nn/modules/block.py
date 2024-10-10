@@ -472,6 +472,41 @@ class C2f(nn.Module):
         y.extend(m(y[-1]) for m in self.m)
         return self.cv2(torch.cat(y, 1))
 
+class C3k2(C2f):
+    """Faster Implementation of CSP Bottleneck with 2 convolutions."""
+
+    def __init__(self, c1, c2, n=1, c3k=False, e=0.5, g=1, shortcut=True):
+        """Initializes the C3k2 module, a faster CSP Bottleneck with 2 convolutions and optional C3k blocks."""
+        super().__init__(c1, c2, n, shortcut, g, e)
+        self.m = nn.ModuleList(
+            C3k(self.c, self.c, 2, shortcut, g) if c3k else Bottleneck(self.c, self.c, shortcut, g) for _ in range(n)
+        )
+
+class C3(nn.Module):
+    """CSP Bottleneck with 3 convolutions."""
+
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5):
+        """Initialize the CSP Bottleneck with given channels, number, shortcut, groups, and expansion values."""
+        super().__init__()
+        c_ = int(c2 * e)  # hidden channels
+        self.cv1 = Conv(c1, c_, 1, 1)
+        self.cv2 = Conv(c1, c_, 1, 1)
+        self.cv3 = Conv(2 * c_, c2, 1)  # optional act=FReLU(c2)
+        self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, k=((1, 1), (3, 3)), e=1.0) for _ in range(n)))
+
+    def forward(self, x):
+        """Forward pass through the CSP bottleneck with 2 convolutions."""
+        return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), 1))
+    
+class C3k(C3):
+    """C3k is a CSP bottleneck module with customizable kernel sizes for feature extraction in neural networks."""
+
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, k=3):
+        """Initializes the C3k module with specified channels, number of layers, and configurations."""
+        super().__init__(c1, c2, n, shortcut, g, e)
+        c_ = int(c2 * e)  # hidden channels
+        # self.m = nn.Sequential(*(RepBottleneck(c_, c_, shortcut, g, k=(k, k), e=1.0) for _ in range(n)))
+        self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, k=(k, k), e=1.0) for _ in range(n)))
 
 class C2g(nn.Module):
     """CSP Bottleneck with 2 convolutions."""
@@ -591,6 +626,141 @@ class Bottleneck(nn.Module):
     def forward(self, x):
         """'forward()' applies the YOLOv5 FPN to input data."""
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
+
+class Attention(nn.Module):
+    """
+    Attention module that performs self-attention on the input tensor.
+
+    Args:
+        dim (int): The input tensor dimension.
+        num_heads (int): The number of attention heads.
+        attn_ratio (float): The ratio of the attention key dimension to the head dimension.
+
+    Attributes:
+        num_heads (int): The number of attention heads.
+        head_dim (int): The dimension of each attention head.
+        key_dim (int): The dimension of the attention key.
+        scale (float): The scaling factor for the attention scores.
+        qkv (Conv): Convolutional layer for computing the query, key, and value.
+        proj (Conv): Convolutional layer for projecting the attended values.
+        pe (Conv): Convolutional layer for positional encoding.
+    """
+
+    def __init__(self, dim, num_heads=8, attn_ratio=0.5):
+        """Initializes multi-head attention module with query, key, and value convolutions and positional encoding."""
+        super().__init__()
+        self.num_heads = num_heads
+        self.head_dim = dim // num_heads
+        self.key_dim = int(self.head_dim * attn_ratio)
+        self.scale = self.key_dim**-0.5
+        nh_kd = self.key_dim * num_heads
+        h = dim + nh_kd * 2
+        self.qkv = Conv(dim, h, 1, act=False)
+        self.proj = Conv(dim, dim, 1, act=False)
+        self.pe = Conv(dim, dim, 3, 1, g=dim, act=False)
+
+    def forward(self, x):
+        """
+        Forward pass of the Attention module.
+
+        Args:
+            x (torch.Tensor): The input tensor.
+
+        Returns:
+            (torch.Tensor): The output tensor after self-attention.
+        """
+        B, C, H, W = x.shape
+        N = H * W
+        qkv = self.qkv(x)
+        q, k, v = qkv.view(B, self.num_heads, self.key_dim * 2 + self.head_dim, N).split(
+            [self.key_dim, self.key_dim, self.head_dim], dim=2
+        )
+
+        attn = (q.transpose(-2, -1) @ k) * self.scale
+        attn = attn.softmax(dim=-1)
+        x = (v @ attn.transpose(-2, -1)).view(B, C, H, W) + self.pe(v.reshape(B, C, H, W))
+        x = self.proj(x)
+        return x
+
+
+class PSABlock(nn.Module):
+    """
+    PSABlock class implementing a Position-Sensitive Attention block for neural networks.
+
+    This class encapsulates the functionality for applying multi-head attention and feed-forward neural network layers
+    with optional shortcut connections.
+
+    Attributes:
+        attn (Attention): Multi-head attention module.
+        ffn (nn.Sequential): Feed-forward neural network module.
+        add (bool): Flag indicating whether to add shortcut connections.
+
+    Methods:
+        forward: Performs a forward pass through the PSABlock, applying attention and feed-forward layers.
+
+    Examples:
+        Create a PSABlock and perform a forward pass
+        >>> psablock = PSABlock(c=128, attn_ratio=0.5, num_heads=4, shortcut=True)
+        >>> input_tensor = torch.randn(1, 128, 32, 32)
+        >>> output_tensor = psablock(input_tensor)
+    """
+
+    def __init__(self, c, attn_ratio=0.5, num_heads=4, shortcut=True) -> None:
+        """Initializes the PSABlock with attention and feed-forward layers for enhanced feature extraction."""
+        super().__init__()
+
+        self.attn = Attention(c, attn_ratio=attn_ratio, num_heads=num_heads)
+        self.ffn = nn.Sequential(Conv(c, c * 2, 1), Conv(c * 2, c, 1, act=False))
+        self.add = shortcut
+
+    def forward(self, x):
+        """Executes a forward pass through PSABlock, applying attention and feed-forward layers to the input tensor."""
+        x = x + self.attn(x) if self.add else self.attn(x)
+        x = x + self.ffn(x) if self.add else self.ffn(x)
+        return x
+
+
+class C2PSA(nn.Module):
+    """
+    C2PSA module with attention mechanism for enhanced feature extraction and processing.
+
+    This module implements a convolutional block with attention mechanisms to enhance feature extraction and processing
+    capabilities. It includes a series of PSABlock modules for self-attention and feed-forward operations.
+
+    Attributes:
+        c (int): Number of hidden channels.
+        cv1 (Conv): 1x1 convolution layer to reduce the number of input channels to 2*c.
+        cv2 (Conv): 1x1 convolution layer to reduce the number of output channels to c.
+        m (nn.Sequential): Sequential container of PSABlock modules for attention and feed-forward operations.
+
+    Methods:
+        forward: Performs a forward pass through the C2PSA module, applying attention and feed-forward operations.
+
+    Notes:
+        This module essentially is the same as PSA module, but refactored to allow stacking more PSABlock modules.
+
+    Examples:
+        >>> c2psa = C2PSA(c1=256, c2=256, n=3, e=0.5)
+        >>> input_tensor = torch.randn(1, 256, 64, 64)
+        >>> output_tensor = c2psa(input_tensor)
+    """
+
+    def __init__(self, c1, c2, n=1, e=0.5):
+        """Initializes the C2PSA module with specified input/output channels, number of layers, and expansion ratio."""
+        super().__init__()
+        assert c1 == c2
+        self.c = int(c1 * e)
+        self.cv1 = Conv(c1, 2 * self.c, 1, 1)
+        self.cv2 = Conv(2 * self.c, c1, 1)
+
+        self.m = nn.Sequential(*(PSABlock(self.c, attn_ratio=0.5, num_heads=self.c // 64) for _ in range(n)))
+
+    def forward(self, x):
+        """Processes the input tensor 'x' through a series of PSA blocks and returns the transformed tensor."""
+        a, b = self.cv1(x).split((self.c, self.c), dim=1)
+        b = self.m(b)
+        return self.cv2(torch.cat((a, b), 1))
+
 
 
 # class Bottleneck(nn.Module):
@@ -2189,6 +2359,8 @@ class FlowUp(nn.Module):
         return torch.cat((x1, x2), 1)
 
 
+from ultralytics.utils.plotting import overlay_heatmap_on_video
+import cv2
 
 class MSTF(nn.Module): #
     def __init__(self, inchannle, hidden_dim=64, epoch_train=22, stride=[2,2,2], radius=[3,3,3], n_levels=3, iter_max=2, method = "method1", motion_flow = True, aux_loss = False):
@@ -2242,6 +2414,9 @@ class MSTF(nn.Module): #
         self.update_block = SmallNetUpdateBlock(input_dim=self.hidden_dim//2, hidden_dim=self.hidden_dim//2, cor_plane = self.cor_plane)
 
         self.plot = False
+        self.save_dir = "./MSTF_saveDir"
+        self.pad_image_func = None
+        
         
 
     def forward(self,x):
@@ -2274,23 +2449,30 @@ class MSTF(nn.Module): #
                 out_list.append(out)
                 fmaps_new.append(fmap)
                 inp.append(torch.relu(fmap))
-                if not self.training and self.plot:
-                    save_dir = "xxx/path/to//save_tansor/"
-                    video_name = img_metas[0]["video_name"]
-                    save_dir = os.path.join(save_dir, video_name)
+                
+            if not self.training and self.plot:
+                video_name = img_metas[0]["video_name"]
+                save_dir = os.path.join(self.save_dir, video_name)
+                os.makedirs(save_dir, exist_ok=True)
+                image_path = img_metas[0]["image_path"]
+
+                image = cv2.imread(image_path)
+                image,_ = self.pad_image_func(image)
+                height, width, _ = image.shape
+                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
                     
-                    feature_new_dir = os.path.join(save_dir, "feature_new")
-                    feature_fused_dir = os.path.join(save_dir, "feature_fused")
-                    flow_dir = os.path.join(save_dir, "flows")
-                    net_dir = os.path.join(save_dir, "nets")
-                    os.makedirs(feature_new_dir, exist_ok=True)
-                    os.makedirs(feature_fused_dir, exist_ok=True)
-                    os.makedirs(flow_dir, exist_ok=True)
-                    os.makedirs(net_dir, exist_ok=True)
-
-                    frame_number = img_metas[0]["frame_number"]
-                    np.save(os.path.join(feature_new_dir, f'level_{i}_{frame_number}.npy'), x[1:][i].cpu().numpy())
-
+                if img_metas[0]["is_first"]:
+                    if hasattr(self, "video_writer_fea"):
+                        self.video_writer_fea.release()
+                        # self.video_writer_flow.release()
+                        # self.video_writer_net.release()
+                    self.number = 0
+                    self.video_writer_fea = cv2.VideoWriter(os.path.join(save_dir, "feature_fused.mp4"), fourcc, 25, (width, height))
+                    # self.video_writer_flow = cv2.VideoWriter(os.path.join(save_dir, "flows.mp4"), fourcc, 25, (width, height))
+                    # self.video_writer_net = cv2.VideoWriter(os.path.join(save_dir, "nets.mp4"), fourcc, 25, (width, height))
+                # if self.number%600==0:
+                #     self.video_writer_fea.release()
+                #     self.video_writer_fea = cv2.VideoWriter(os.path.join(save_dir, f"feature_fused_{int(self.number/600)}.mp4"), fourcc, 25, (width, height))
 
             src_flatten_new, spatial_shapes, level_start_index = self.buffer.flatten(fmaps_new, True)
 
@@ -2333,17 +2515,22 @@ class MSTF(nn.Module): #
             net = [net_8, net_16, net_32]
             self.buffer.update_coords(coords1)
             self.buffer.update_net(net)
-
-
+                
             for i in range(self.n_levels):
-                if not self.training and self.plot:
-                    np.save(os.path.join(flow_dir, f'level_{i}_{frame_number}.npy'), (coords1[i]-coords0[i]).cpu().numpy())
-                    print(torch.sum(coords1[i]-coords0[i]))
-                    np.save(os.path.join(net_dir, f'level_{i}_{frame_number}.npy'), net[i].cpu().numpy())
+                # if not self.training and self.plot:
+                #     np.save(os.path.join(flow_dir, f'level_{i}_{frame_number}.npy'), (coords1[i]-coords0[i]).cpu().numpy())
+                #     print(torch.sum(coords1[i]-coords0[i]))
+                #     np.save(os.path.join(net_dir, f'level_{i}_{frame_number}.npy'), net[i].cpu().numpy())
                 fmaps_new[i] = self.convs2[i](torch.cat([out_list[i],fmaps_new[i],net[i]], 1)) + x[1:][i]
-                if not self.training and self.plot:
-                    np.save(os.path.join(feature_fused_dir,  f'level_{i}_{frame_number}.npy'), fmaps_new[i].cpu().numpy())
+                # if not self.training and self.plot:
+                #     np.save(os.path.join(feature_fused_dir,  f'level_{i}_{frame_number}.npy'), fmaps_new[i].cpu().numpy())
 
+            if not self.training and self.plot:
+                # overlay_heatmap_on_video(self.video_writer_flow, image, coords1)
+                # overlay_heatmap_on_video(self.video_writer_net, image, net)
+                overlay_heatmap_on_video(self.video_writer_fea, image, fmaps_new)
+                self.number+=1
+                
             return fmaps_new
             
 
@@ -2478,7 +2665,7 @@ class VelocityNet_baseline3_split_dim(MSTF): #
             return fmaps_new, {"k":0.1, "loss":torch.tensor(0.0).to(net_32.device)}
             
 
-class VelocityNet_baseline3_singal_flow(VelocityNet_baseline1): #
+class MSTF_singal_flow(VelocityNet_baseline1): #
     def __init__(self, inchannle, hidden_dim=64, epoch_train=22, stride=[1,1,1], radius=[3,3,3], level_use=[0,1,2], n_levels=3, iter_max=2, method = "method1", motion_flow = True, aux_loss = False):
         super().__init__(inchannle=inchannle, hidden_dim=hidden_dim, epoch_train=epoch_train, 
                                           stride=stride, radius=radius, n_levels=n_levels, iter_max=iter_max, 
@@ -2506,10 +2693,10 @@ class VelocityNet_baseline3_singal_flow(VelocityNet_baseline1): #
         with autocast(dtype=torch.float32):
             img_metas = x[0]["img_metas"]
             fmaps_new = x[1:]  #3,B,C,H,W
-            
+
             if fmaps_new[0].device.type == "cpu" or (img_metas[0]["epoch"] < self.epoch_train and self.training) or self.epoch_train == 100:
                 if self.epoch_train == 100:
-                    return x[1:], {"k":0.1, "loss":torch.tensor(0.0)}
+                    return x[1:]
                 outs = []
                 for i in range(self.n_levels):
                     out, fmap = self.convs1[i](x[1:][i]).chunk(2, 1)
@@ -2517,8 +2704,7 @@ class VelocityNet_baseline3_singal_flow(VelocityNet_baseline1): #
                     # fmap = self.convs1[i](fmap) #hidden
                     out = self.convs2[i](torch.cat([out,fmap,torch.relu(fmap)], 1))
                     outs.append(out)
-                return outs, {"k":0.1, "loss":torch.tensor(0.0)}
-
+                return outs
             
             out_list = []
             fmaps_new = []
@@ -2592,7 +2778,7 @@ class VelocityNet_baseline3_singal_flow(VelocityNet_baseline1): #
                 if not self.training and self.plot:
                     np.save(save_dir + f'fmaps_new_fused_{i}_{frame_number}.npy', fmaps_new[i].cpu().numpy())
 
-            return fmaps_new, {"k":0.1, "loss":torch.tensor(0.0).to(net_32.device)}
+            return fmaps_new
             
 class VelocityNet_baseline3_iter(MSTF): #
     def __init__(self, inchannle, hidden_dim=64, epoch_train=22, stride=[2,2,2], radius=[3,3,3], iter_max=2, n_levels=3, method = "method1", motion_flow = True, aux_loss = False):

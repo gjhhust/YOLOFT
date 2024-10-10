@@ -874,13 +874,13 @@ def parse_motion_model(d, ch, verbose=True):  # model_dict, input_channels(3)
         n = n_ = max(round(n * depth), 1) if n > 1 else n  # depth gain
         if m in (Classify, Conv,DCNV3_conv, ConvTranspose, GhostConv, Bottleneck,Bottleneck_DCNV3, GhostBottleneck, SPP, SPPF, SPPELAN, DWConv, Focus,
                  BottleneckCSP, C1, C2, C2f, C2f_DCNV3,C2g, C3f, C3, C3TR, C3Ghost, nn.ConvTranspose2d, DWConvTranspose2d, C3x, RepC3, Cxa, Cxb,
-                 Cxc, Cxd, Cxe, Cxf, Cxc_act, Cg1, Cg2, Cg3, Cg4, Cg5, Cg6, Cg7, Cg8):
+                 Cxc, Cxd, Cxe, Cxf, Cxc_act, Cg1, Cg2, Cg3, Cg4, Cg5, Cg6, Cg7, Cg8, C3k2, C2PSA):
             c1, c2 = ch[f], args[0]
             if c2 != nc:  # if c2 not equal to number of classes (i.e. for Classify() output)
                 c2 = make_divisible(min(c2, max_channels) * width, 8)
             args = [c1, c2, *args[1:]]
             if m in (BottleneckCSP, C1, C2, C2f,C2f_DCNV3, C2g, C3f, C3, C3TR, C3Ghost, C3x, RepC3, Cxa, Cxb, Cxc, Cxd, Cxe, Cxf, Cxc_act,
-                     Cg1, Cg2, Cg3, Cg4, Cg5, Cg6, Cg7, Cg8):
+                     Cg1, Cg2, Cg3, Cg4, Cg5, Cg6, Cg7, Cg8, C3k2, C2PSA):
                 args.insert(2, n)  # number of repeats
                 n = 1
         elif m is AIFI:
@@ -939,7 +939,7 @@ def parse_motion_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             args[0] = ch[f[1]]
             args.insert(0, c1)
         elif m in (VelocityNet,VelocityNet_baseline0,VelocityNet_baseline1,VelocityNet_baseline2,
-                   MSTF, VelocityNet_baseline3_singal_flow,VelocityNet_baseline3_split_dim,VelocityNet_baseline3_iter):
+                   MSTF, MSTF_singal_flow,VelocityNet_baseline3_split_dim,VelocityNet_baseline3_iter):
             c1 = [ch[f_] for f_ in f[1:]]
             c2 = c1
             args.insert(0, c1)

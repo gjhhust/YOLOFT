@@ -59,11 +59,28 @@
             "program": "${workspaceFolder}/tools/predict_yoloft.py",
             "console": "integratedTerminal",
             "args": [
-                "/data/jiahaoguo/dataset/UAVTOD_1/images",         // 替换为你的 image_dir 路径
-                "/data/jiahaoguo/YOLOFT/yoloft/train25/weights/best.pt",
-                "--save_dir", "/data/jiahaoguo/YOLOFT/runs/predict",   // 替换为你的 save_dir 路径
-                // "--eval_json", "/data/jiahaoguo/dataset/speed_merge/merge_test_1.json",  // 替换为你的 eval.json 路径
-                "--mode", "muti"                          // 或 "muti", 取决于你要测试的模式
+                "/data/jiahaoguo/dataset/speed_merge/images",         // 替换为你的 image_dir 路径
+                "/data/jiahaoguo/YOLOFT/yoloft/train53/weights/best.pt",
+                "--save_dir", "/data/jiahaoguo/YOLOFT/runs/heatmaps",   // 替换为你的 save_dir 路径
+                "--eval_json", "/data/jiahaoguo/dataset/speed_merge/merge_test_1.json",  // 替换为你的 eval.json 路径
+                "--mode", "muti" ,                         // 或 "muti", 取决于你要测试的模式
+                "--save_heatmap"
+            ],
+            "justMyCode": false
+        },
+        {
+            "name": "Python: predict 2",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/tools/predict_yoloft.py",
+            "console": "integratedTerminal",
+            "args": [
+                "/data/jiahaoguo/dataset/gaode_all/gaode_5/images",         // 替换为你的 image_dir 路径
+                "/data/jiahaoguo/YOLOFT/yoloft/save/YOLOFT_target/train59_27.3_10small_pianduan/weights/best.pt",
+                "--save_dir", "/data/jiahaoguo/YOLOFT/runs/heatmaps",   // 替换为你的 save_dir 路径
+                "--eval_json", "/data/jiahaoguo/dataset/gaode_all/gaode_5/annotations/target_ann/cocoVID/test.json",  // 替换为你的 eval.json 路径
+                "--mode", "muti" ,                         // 或 "muti", 取决于你要测试的模式
+                "--save_heatmap"
             ],
             "justMyCode": false
         }

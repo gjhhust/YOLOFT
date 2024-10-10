@@ -12,6 +12,7 @@ import torch
 from PIL import Image, ImageDraw, ImageFont
 from PIL import __version__ as pil_version
 from scipy.ndimage import gaussian_filter1d
+import torch.nn.functional as F
 
 from ultralytics.utils import LOGGER, TryExcept, plt_settings, threaded
 
@@ -19,7 +20,78 @@ from .checks import check_font, check_version, is_ascii
 from .files import increment_path
 from .ops import clip_boxes, scale_image, xywh2xyxy, xyxy2xywh
 
+def adjust_heatmap(heatmap):
+    """
+    调整heatmap，使得小于平均值的数减小，大于平均值的数增大。
 
+    参数:
+    - heatmap: 输入的灰度图 (h * w, 值为0-255)
+
+    返回:
+    - adjusted_heatmap: 调整后的灰度图
+    """
+    # 计算heatmap的平均值
+    mean_value = np.median(heatmap)
+
+    # 初始化一个与heatmap相同大小的数组
+    adjusted_heatmap = np.zeros_like(heatmap)
+
+    # 对小于平均值的值进行衰减（使用平方根或其他方法）
+    adjusted_heatmap[heatmap < mean_value] = np.sqrt(heatmap[heatmap < mean_value])
+
+    # 对大于平均值的值进行增强（使用平方或其他方法）
+    adjusted_heatmap[heatmap >= mean_value] = np.square(heatmap[heatmap >= mean_value])
+
+    # 归一化到0-255范围
+    adjusted_heatmap = cv2.normalize(adjusted_heatmap, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+
+    return adjusted_heatmap.astype(np.uint8)
+
+def overlay_heatmap_on_video(video_writer, original_image, feature_maps):
+    # 获取原始图像的大小
+    original_height, original_width = original_image.shape[:2]
+
+    # 初始化处理后的图像为原始图像的副本
+    processed_image = original_image.copy()
+
+    # 如果特征图不是列表，转换为列表以统一处理
+    if not isinstance(feature_maps, list):
+        feature_maps = [feature_maps]
+
+    # 上采样所有特征图并融合
+    upsampled_features = []
+    for feature_map in feature_maps:
+        # 上采样特征图到原图大小
+        feature_map = F.interpolate(feature_map, size=(original_height, original_width), mode='bilinear', align_corners=False)
+        upsampled_features.append(feature_map.squeeze(0).detach())
+
+    # 将所有特征图沿通道方向堆叠成一个张量
+    combined_feature_map = torch.cat(upsampled_features, dim=0)  # (N*C, H, W)
+
+    # 对通道进行融合，使用最大值法（也可以选择其他方法如平均值）
+    combined_feature_map = torch.max(combined_feature_map, dim=0).values  # (H, W)
+
+    # 转换为NumPy数组
+    feature_map_np = combined_feature_map.cpu().numpy() if hasattr(combined_feature_map, 'cpu') else combined_feature_map
+
+    # 归一化特征图到0-255范围内以便转换为灰度图
+    heatmap = cv2.normalize(feature_map_np, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX)
+    heatmap = adjust_heatmap(heatmap)
+    heatmap = heatmap.astype(np.uint8)
+    
+    # 将灰度图转换为伪彩色热图
+    heatmap_color = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+
+    # 将热图叠加到原始图像上
+    processed_image = cv2.addWeighted(processed_image, 0.7, heatmap_color, 0.3, 0)
+
+    # 将处理后的图像帧写入视频句柄
+    video_writer.write(processed_image)
+    # cv2.imwrite(video_writer, processed_image)
+    # return processed_image
+
+    
+    
 class Colors:
     """Ultralytics color palette https://ultralytics.com/."""
 
