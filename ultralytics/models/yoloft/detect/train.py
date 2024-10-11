@@ -115,6 +115,13 @@ class DetectionTrainer(BaseTrainer):
             self.plot_idx.extend([base_idx, base_idx + 1, base_idx + 2])
         epoch = self.epochs  # predefine for resume fully trained model edge cases
 
+        # plot batch video debug
+        video_batch_list = []
+        bbox_list = []
+        batch_list_idx = []
+        cls_list = []
+        save_sample_flag = False
+        
         for epoch in range(self.start_epoch, self.epochs):
             torch.cuda.empty_cache()
             self.epoch = epoch
@@ -213,8 +220,22 @@ class DetectionTrainer(BaseTrainer):
                     self.run_callbacks('on_batch_end')
                     if self.args.plots and ni in self.plot_idx:
                         self.plot_training_samples(batch, ni)
+                    if self.args.datasampler == "streamSampler" and self.args.plots:
+                        save_flag = False
+                        # if not save_flag and not save_sample_flag:  
+                        #     video_batch_list.append(batch["img"]["backbone"].clone().cpu())
+                        #     bbox_list.append(batch["bboxes"].clone().cpu())
+                        #     batch_list_idx.append(batch["batch_idx"].clone().cpu())
+                        #     cls_list.append(batch['cls'].squeeze(-1).clone().cpu())
+                        #     if len(video_batch_list) == 160: #save 160 frames
+                        #         save_flag = True
+                        # if save_flag and not save_sample_flag:
+                        #     save_sample_flag = True
+                        #     self.plot_training_video_samples(video_batch_list,batch,bbox_list,batch_list_idx,cls_list)
+                        
                 self.run_callbacks('on_train_batch_end')
             
+            # save_sample_flag = True #only plot once
             self.lr = {f'lr/pg{ir}': x['lr'] for ir, x in enumerate(self.optimizer.param_groups)}  # for loggers
 
             self.scheduler.step()
