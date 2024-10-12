@@ -4,7 +4,7 @@ from ultralytics.data.cocoeval import COCOeval  # noqa
 
 # anno_json = "/data/jiahaoguo/dataset/speed_merge/merge_test_1.json"
 # pred_json = "/data/jiahaoguo/YOLOFT/yoloft/train53/predictions.json"
-anno_json = "/data/jiahaoguo/dataset/gaode_all/gaode_5/annotations/coco/test.json"
+anno_json = "/data/jiahaoguo/dataset/gaode_all/gaode_5/annotations/coco/test_cocoVID.json"
 pred_json = "/data/jiahaoguo/ultralytics/runs/gaode_5/train269_DCN3_24.4/predictions.json"
 
 
@@ -13,7 +13,7 @@ pred = anno.loadRes(str(pred_json))  # init predictions api (must pass string, n
 eval = COCOeval(anno, pred, 'bbox')
 
 # 仅对类别1进行评估
-eval.params.catIds = [1]  # 设定类别ID为1
+# eval.params.catIds = [1]  # 设定类别ID为1
 
 eval.evaluate()
 eval.accumulate()

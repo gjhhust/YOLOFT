@@ -11,7 +11,7 @@ from ultralytics.nn.tasks import DetectionModel
 from ultralytics.utils import DEFAULT_CFG, LOGGER, RANK
 from ultralytics.utils.plotting import plot_images, plot_labels, plot_results
 from ultralytics.utils.torch_utils import de_parallel, torch_distributed_zero_first
-
+import os
 
 # BaseTrainer python usage
 class DetectionTrainer(BaseTrainer):
@@ -26,7 +26,20 @@ class DetectionTrainer(BaseTrainer):
             batch (int, optional): Size of batches, this is for `rect`. Defaults to None.
         """
         gs = max(int(de_parallel(self.model).stride.max() if self.model else 0), 32)
-        return build_yolo_dataset(self.args, img_path, batch, self.data, mode=mode, rect=mode == 'val', stride=gs)
+        
+                
+        if mode == "train" and self.data["style"]=="muti":
+            images_dir = os.path.join(self.data["train_images_dir"])
+            labels_dir = os.path.join(self.data["train_labels_dir"])
+        elif mode == "val" and self.data["style"]=="muti":
+            images_dir = os.path.join(self.data["val_images_dir"])
+            labels_dir = os.path.join(self.data["val_labels_dir"])
+        elif self.data["style"]=="one":
+            images_dir = os.path.join(self.data["path"],self.data["images_dir"])
+            labels_dir = os.path.join(self.data["path"],self.data["labels_dir"])
+            
+        return build_yolo_dataset(self.args, img_path, batch, self.data, mode=mode, 
+                                  images_dir=images_dir, labels_dir=labels_dir, rect=mode == 'val', stride=gs)
 
     def get_dataloader(self, dataset_path, batch_size=16, rank=0, mode='train'):
         """Construct and return dataloader."""
@@ -38,6 +51,7 @@ class DetectionTrainer(BaseTrainer):
             LOGGER.warning("WARNING ⚠️ 'rect=True' is incompatible with DataLoader shuffle, setting shuffle=False")
             shuffle = False
         workers = self.args.workers if mode == 'train' else self.args.workers * 2
+
         return build_dataloader(dataset, batch_size, workers, shuffle, rank)  # return dataloader
 
     def preprocess_batch(self, batch):

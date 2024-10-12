@@ -13,7 +13,7 @@ print("now flow_conv:", flow_conv)
 from .transformer import TransformerBlock
 from .utils import getPatchFromFullimg,normMask,transform,DLT_solve,homo_align
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
-from .memory_buffer import MutiFeatureBuffer, FeatureBuffer, FlowBuffer
+from .memory_buffer import MutiFeatureBuffer, FeatureBuffer, FlowBuffer, StreamBuffer
 # __all__ = ('DFL', 'HGBlock', 'HGStem', 'SPP', 'SPPF', 'C1', 'C2', 'C3', 'C2f', 'C3x', 'C3TR', 'C3Ghost',
 #           'GhostBottleneck', 'Bottleneck', 'BottleneckCSP', 'Proto', 'RepC3')
 from torch.cuda.amp import autocast, GradScaler #
@@ -542,6 +542,23 @@ class C3(nn.Module):
         self.cv1 = Conv(c1, c_, 1, 1)
         self.cv2 = Conv(c1, c_, 1, 1)
         self.cv3 = Conv(2 * c_, c2, 1)  # optional act=FReLU(c2)
+        self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, k=((1, 1), (3, 3)), e=1.0) for _ in range(n)))
+
+    def forward(self, x):
+        """Forward pass through the CSP bottleneck with 2 convolutions."""
+        return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), 1))
+
+
+class C3_wise(nn.Module):
+    """CSP Bottleneck with 3 convolutions."""
+
+    def __init__(self, c1, c2, n=1, shortcut=True, depthwise=False, g=1, e=0.5):  # ch_in, ch_out, number, shortcut, groups, expansion
+        super().__init__()
+        c_ = int(c2 * e)  # hidden channels
+        conv = DWConv if depthwise else Conv
+        self.cv1 = conv(c1, c_, 1, 1)
+        self.cv2 = conv(c1, c_, 1, 1)
+        self.cv3 = conv(2 * c_, c2, 1)  # optional act=FReLU(c2)
         self.m = nn.Sequential(*(Bottleneck(c_, c_, shortcut, g, k=((1, 1), (3, 3)), e=1.0) for _ in range(n)))
 
     def forward(self, x):
@@ -1296,9 +1313,10 @@ class get_orige_data(nn.Module):
             if isinstance(x, dict):
                 return x
             else:
+                b,_, _, _ = x.shape
                 return {
                     "backbone":x.clone(),
-                    "img_metas": [{"is_first":False,"epoch":0}],
+                    "img_metas": [{"is_first":False,"epoch":0} for _ in range(b)],
                 }
 
         elif self.mode == "backbone": 
@@ -2532,7 +2550,257 @@ class MSTF(nn.Module): #
                 self.number+=1
                 
             return fmaps_new
+
+class MSTF_STREAM(nn.Module): #
+    def __init__(self, in_channels, epoch_train=0, depth=1.0,
+        width=1.0, n_levels=3, depthwise=False,
+        act=nn.SiLU(),):
+        '''
+        input_dim  dim of the backbone features.
+        hidden_dim Memorizing hidden and input layers
+        n_levels Number of multi-scale feature maps
+        epoch_train start fused 
+        iter_max Number of iterations
+        '''
+        super(MSTF_STREAM, self).__init__()
+        self.in_channels = in_channels
+        self.epoch_train = epoch_train
+        # buffer
+        self.buffer = StreamBuffer("MemoryAtten", number_feature=n_levels)
+        
+        conv = DWConv if depthwise else Conv
+
+        self.lateral_conv0 = conv(
+            int(in_channels[2] * width), int(in_channels[1] * width), 1, 1, act=act
+        )
+        self.C3_p4 = C3_wise(
+            int(2 * in_channels[1] * width),
+            int(in_channels[1] * width),
+            round(3 * depth),
+            False,
+            depthwise=depthwise,
+        )  # cat
+
+        self.reduce_conv1 = conv(
+            int(in_channels[1] * width), int(in_channels[0] * width), 1, 1, act=act
+        )
+        self.C3_p3 = C3_wise(
+            int(2 * in_channels[0] * width),
+            int(in_channels[0] * width),
+            round(3 * depth),
+            False,
+            depthwise=depthwise,
+        )
+
+        # bottom-up conv
+        self.bu_conv2 = conv(
+            int(in_channels[0] * width), int(in_channels[0] * width), 3, 2, act=act
+        )
+        self.C3_n3 = C3_wise(
+            int(2 * in_channels[0] * width),
+            int(in_channels[1] * width),
+            round(3 * depth),
+            False,
+            depthwise=depthwise,
+        )
+
+        # bottom-up conv
+        self.bu_conv1 = conv(
+            int(in_channels[1] * width), int(in_channels[1] * width), 3, 2, act=act
+        )
+        self.C3_n4 = C3_wise(
+            int(2 * in_channels[1] * width),
+            int(in_channels[2] * width),
+            round(3 * depth),
+            False,
+            depthwise=depthwise,
+        )
+
+        self.jian2 = conv(
+                    int(in_channels[0] * width),
+                    int(in_channels[0] * width) // 2,
+                    k=1,
+                    s=1,
+                    act=act,
+                )
+
+        self.jian1 = conv(
+            int(in_channels[1] * width),
+            int(in_channels[1] * width) // 2,
+                    k=1,
+                    s=1,
+                    act=act,
+                )
+
+        self.jian0 = conv(
+            int(in_channels[2] * width),
+            int(in_channels[2] * width) // 2,
+                    k=1,
+                    s=1,
+                    act=act,
+                )
+    
+    def forward(self, x):
+        """
+        Args:
+            inputs: input images.
+
+        Returns:
+            Tuple[Tensor]: FPN feature.
+        """
+        # self.plot = True
+        img_metas = x[0]["img_metas"]
+        fmaps_new = x[1:]  #3,B,C,H,W The incoming scale must be from large to small
+        
+        [rurrent_x2, rurrent_x1, rurrent_x0] = fmaps_new
+        
+        if fmaps_new[0].device.type == "cpu" or (img_metas[0]["epoch"] < self.epoch_train and self.training):
+            return x[1:]    
+
+        rurrent_fpn_out0 = self.lateral_conv0(rurrent_x0)  # 1024->512/32
+        rurrent_f_out0 = F.interpolate(rurrent_fpn_out0, size=rurrent_x1.shape[2:4], mode='nearest')  # 512/16
+        rurrent_f_out0 = torch.cat([rurrent_f_out0, rurrent_x1], 1)  # 512->1024/16
+        rurrent_f_out0 = self.C3_p4(rurrent_f_out0)  # 1024->512/16
+
+        rurrent_fpn_out1 = self.reduce_conv1(rurrent_f_out0)  # 512->256/16
+        rurrent_f_out1 = F.interpolate(rurrent_fpn_out1, size=rurrent_x2.shape[2:4], mode='nearest')  # 256/8
+        rurrent_f_out1 = torch.cat([rurrent_f_out1, rurrent_x2], 1)  # 256->512/8
+        rurrent_pan_out2 = self.C3_p3(rurrent_f_out1)  # 512->256/8
+
+        rurrent_p_out1 = self.bu_conv2(rurrent_pan_out2)  # 256->256/16
+        rurrent_p_out1 = torch.cat([rurrent_p_out1, rurrent_fpn_out1], 1)  # 256->512/16
+        rurrent_pan_out1 = self.C3_n3(rurrent_p_out1)  # 512->512/16
+
+        rurrent_p_out0 = self.bu_conv1(rurrent_pan_out1)  # 512->512/32
+        rurrent_p_out0 = torch.cat([rurrent_p_out0, rurrent_fpn_out0], 1)  # 512->1024/32
+        rurrent_pan_out0 = self.C3_n4(rurrent_p_out0)  # 1024->1024/32
+
+    
+        result_first_frame, fmaps_old = self.buffer.update_memory([rurrent_pan_out2,rurrent_pan_out1,rurrent_pan_out0], img_metas)
+        
+        [support_pan_out2, support_pan_out1, support_pan_out0] = fmaps_old
+        
+        # 融合
+        pan_out2 = torch.cat([self.jian2(rurrent_pan_out2), self.jian2(support_pan_out2)], dim=1) + rurrent_pan_out2
+        pan_out1 = torch.cat([self.jian1(rurrent_pan_out1), self.jian1(support_pan_out1)], dim=1) + rurrent_pan_out1
+        pan_out0 = torch.cat([self.jian0(rurrent_pan_out0), self.jian0(support_pan_out0)], dim=1) + rurrent_pan_out0
+        
+        return [pan_out2, pan_out1, pan_out0]
+
+        
+    def forward_(self,x):
+        # self.plot = True
+        with autocast(dtype=torch.float32):
+            img_metas = x[0]["img_metas"]
+            fmaps_new = x[1:]  #3,B,C,H,W The incoming scale must be from large to small
             
+            if fmaps_new[0].device.type == "cpu" or (img_metas[0]["epoch"] < self.epoch_train and self.training) or self.epoch_train == 100:
+                if self.epoch_train == 100:
+                    return x[1:]
+                outs = []
+                for i in range(self.n_levels):
+                    out, fmap = self.convs1[i](x[1:][i]).chunk(2, 1)
+                    # out, fmap = self.convs0[i](x[1:][i]).chunk(2, 1) #128,128
+                    # fmap = self.convs1[i](fmap) #hidden
+                    out = self.convs2[i](torch.cat([out,fmap,torch.relu(fmap)], 1))
+                    outs.append(out)
+                return outs
+
+            
+            # Gradient triage, dimensional consistency
+            out_list = []
+            fmaps_new = []
+            inp = []
+            for i in range(self.n_levels):
+                out, fmap = self.convs1[i](x[1:][i]).chunk(2, 1)
+                # out, fmap = self.convs0[i](x[1:][i]).chunk(2, 1) #128,128
+                # fmap = self.convs1[i](fmap) #hidden
+                out_list.append(out)
+                fmaps_new.append(fmap)
+                inp.append(torch.relu(fmap))
+                
+            if not self.training and self.plot:
+                video_name = img_metas[0]["video_name"]
+                save_dir = os.path.join(self.save_dir, video_name)
+                os.makedirs(save_dir, exist_ok=True)
+                image_path = img_metas[0]["image_path"]
+
+                image = cv2.imread(image_path)
+                image,_ = self.pad_image_func(image)
+                height, width, _ = image.shape
+                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                    
+                if img_metas[0]["is_first"]:
+                    if hasattr(self, "video_writer_fea"):
+                        self.video_writer_fea.release()
+                        # self.video_writer_flow.release()
+                        # self.video_writer_net.release()
+                    self.number = 0
+                    self.video_writer_fea = cv2.VideoWriter(os.path.join(save_dir, "feature_fused.mp4"), fourcc, 25, (width, height))
+                    # self.video_writer_flow = cv2.VideoWriter(os.path.join(save_dir, "flows.mp4"), fourcc, 25, (width, height))
+                    # self.video_writer_net = cv2.VideoWriter(os.path.join(save_dir, "nets.mp4"), fourcc, 25, (width, height))
+                # if self.number%600==0:
+                #     self.video_writer_fea.release()
+                #     self.video_writer_fea = cv2.VideoWriter(os.path.join(save_dir, f"feature_fused_{int(self.number/600)}.mp4"), fourcc, 25, (width, height))
+
+            src_flatten_new, spatial_shapes, level_start_index = self.buffer.flatten(fmaps_new, True)
+
+            result_first_frame, fmaps_old, net_old, coords0, coords1, topk_bbox = self.buffer.update_memory(src_flatten_new, img_metas, spatial_shapes, level_start_index)
+
+            corr_fn_muti = []
+            for lvl in range(self.n_levels):
+                corr_fn_muti.append(AlternateCorrBlock(fmaps_new[lvl], fmaps_old, self.n_levels, self.radius[lvl], self.stride))
+
+            # 1/32
+            lvl = 2
+            corr_32 = corr_fn_muti[lvl](coords1[lvl])
+            flow_32 = coords1[lvl] - coords0[lvl]
+            
+            # 1/16
+            lvl = 1
+            corr_16 = corr_fn_muti[lvl](coords1[lvl])
+            flow_16 = coords1[lvl] - coords0[lvl]
+            corr_16_fused = self.flow_fused0(corr_32, corr_16)
+            net_16, _, delta_flow = self.update_block(net_old[lvl], inp[lvl], corr_16_fused, flow_16)
+            coords1[lvl] = coords1[lvl] + delta_flow
+
+            # 1/8
+            lvl = 0
+            corr_8 = corr_fn_muti[lvl](coords1[lvl])
+            flow_8 = coords1[lvl] - coords0[lvl]
+            corr_8_fused = self.flow_fused1(corr_16_fused, corr_8)
+            net_8, _, delta_flow = self.update_block(net_old[lvl], inp[lvl], corr_8_fused, flow_8)
+            coords1[lvl] = coords1[lvl] + delta_flow
+            corr_8To32 = F.interpolate(corr_8_fused, scale_factor=1/4, mode="bilinear", align_corners=True)
+            corr_16To32 = F.interpolate(corr_16_fused, scale_factor=1/2, mode="bilinear", align_corners=True)
+
+            # 1/32
+            lvl = 2
+            corr_32_fused = self.flow_fused2(corr_8_fused, corr_16_fused, corr_32)
+            net_32, _, delta_flow = self.update_block(net_old[lvl], inp[lvl], corr_32_fused, flow_32)
+            coords1[lvl] = coords1[lvl] + delta_flow
+
+            #get coords1\net_8\net_16\net_32
+            net = [net_8, net_16, net_32]
+            self.buffer.update_coords(coords1)
+            self.buffer.update_net(net)
+                
+            for i in range(self.n_levels):
+                # if not self.training and self.plot:
+                #     np.save(os.path.join(flow_dir, f'level_{i}_{frame_number}.npy'), (coords1[i]-coords0[i]).cpu().numpy())
+                #     print(torch.sum(coords1[i]-coords0[i]))
+                #     np.save(os.path.join(net_dir, f'level_{i}_{frame_number}.npy'), net[i].cpu().numpy())
+                fmaps_new[i] = self.convs2[i](torch.cat([out_list[i],fmaps_new[i],net[i]], 1)) + x[1:][i]
+                # if not self.training and self.plot:
+                #     np.save(os.path.join(feature_fused_dir,  f'level_{i}_{frame_number}.npy'), fmaps_new[i].cpu().numpy())
+
+            if not self.training and self.plot:
+                # overlay_heatmap_on_video(self.video_writer_flow, image, coords1)
+                # overlay_heatmap_on_video(self.video_writer_net, image, net)
+                overlay_heatmap_on_video(self.video_writer_fea, image, fmaps_new)
+                self.number+=1
+                
+            return fmaps_new
 
 class VelocityNet_baseline3_split_dim(MSTF): #
     def __init__(self, inchannle, hidden_dim=64, epoch_train=22, stride=[2,2,2], radius=[3,3,3], n_levels=3, iter_max=2, method = "method1", motion_flow = True, aux_loss = False):

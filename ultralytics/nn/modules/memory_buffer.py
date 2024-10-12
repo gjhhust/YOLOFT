@@ -599,3 +599,81 @@ def from_refpoint_coords(reference_points, spatial_shapes):
     return reference_points[:,:H*W,:].transpose(-1, -2).reshape(bs, dim, H, W)
 
 
+
+class StreamBuffer(object):
+    _instances = {}
+
+    def __new__(cls, name, *args, **kwargs):
+        # name = args[0] if args else None
+        if name in cls._instances:
+            return cls._instances[name]
+        else:
+            instance = super().__new__(cls)
+            instance.name = name
+            cls._instances[name] = instance
+            return instance
+        
+    def __init__(self, name, number_feature=3):
+        super().__init__()
+        if not hasattr(self, 'initialized'):
+            self.name = name
+            self.bs = 0
+            self.memory_fmaps = None
+            self.img_metas_memory =  [None for i in range(self.bs)]
+            self.initialized = True
+            self.number_feature = number_feature
+
+
+    def __reduce__(self):
+        return (self.__class__, (self.name,self.number_feature))
+    
+    def get_spatial_shapes(self, srcs):
+        spatial_shapes = []
+        for lvl, src in enumerate(srcs):
+            bs, c, h, w = src.shape
+            spatial_shape = (h, w)
+            spatial_shapes.append(spatial_shape)
+        return torch.as_tensor(spatial_shapes, dtype=torch.long, device=srcs[0].device)
+
+    def update_memory(self, memory_now, img_metas):
+        b, dim, h, w = memory_now[0].shape
+        spatial_shapes = self.get_spatial_shapes(memory_now)
+        
+        assert len(img_metas) == b
+
+        if b == self.bs: # Store current memory and image information, return previous storage
+            pass
+        else:
+            self.reset_all(b)
+
+        result_first_frame = [img_metas[i]["is_first"] for i in range(b)]
+        
+        # must init
+        if self.spatial_shapes is None or (not torch.equal(self.spatial_shapes,spatial_shapes)) or self.memory_fmaps is None:
+            self.spatial_shapes = spatial_shapes.clone()
+            self.memory_fmaps = [f.detach().clone() for f in memory_now]
+            
+            for i in range(self.bs):
+                result_first_frame[i] = True
+                
+        # init video
+        for i in range(self.bs): 
+            if result_first_frame[i]: # If current is first frame, history zero, stream initialization
+                # print("Fist init flow")
+                # update every level
+                for f in range(len(memory_now)):
+                    self.memory_fmaps[f][i] = memory_now[f][i].detach().clone()
+
+        #save
+        results_memory = [f.clone() for f in self.memory_fmaps]
+        self.memory_fmaps = [f.detach().clone() for f in memory_now]
+        for i in range(self.bs):
+            self.img_metas_memory[i] = copy.deepcopy(img_metas[i])
+
+        return result_first_frame, results_memory
+    
+    def reset_all(self, batch = 1):
+        self.bs = batch
+        self.memory_fmaps = None
+        self.img_metas_memory =  [None for i in range(self.bs)]
+        self.spatial_shapes = None

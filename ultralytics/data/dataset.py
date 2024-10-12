@@ -118,13 +118,8 @@ class YOLODataset(BaseDataset):
             LOGGER.warning(f'{self.prefix}WARNING ⚠️ Cache directory {path.parent} is not writeable, cache not saved.')
         return x
     
-    # def img2label_paths(self,img_paths):
-    #         """Define label paths as a function of image paths."""
-    #         sa, sb = f'{os.sep}{self.data["images_dir"]}', f'{os.sep}{self.data["labels_dir"]}'  # /images/, /labels/ substrings
-    #         import pdb;pdb.set_trace()
-    #         return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.txt' for x in img_paths]
     def img2label_paths(self,img_paths):
-        sa, sb = f'{os.sep}{self.data["images_dir"]}', f'{os.sep}{self.data["labels_dir"]}'  # /images/, /labels/ substrings
+        sa, sb = f'{self.images_dir}', f'{self.labels_dir}'  # /images/, /labels/ substrings
         return [path.replace(sa, sb).split('.')[0]+'.txt' for path in img_paths]
 
     def get_labels(self):
@@ -652,12 +647,11 @@ class MOVEDETDataset(BaseDataset):
         else:
             LOGGER.warning(f'{self.prefix}WARNING ⚠️ Cache directory {path.parent} is not writeable, cache not saved.')
         return x
-
+    
     def img2label_paths(self,img_paths):
-            """Define label paths as a function of image paths."""
-            sa, sb = f'{os.sep}{self.data["images_dir"]}', f'{os.sep}{self.data["labels_dir"]}'  # /images/, /labels/ substrings
-            return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.txt' for x in img_paths]
-        
+        sa, sb = f'{self.images_dir}', f'{self.labels_dir}'  # /images/, /labels/ substrings
+        return [path.replace(sa, sb).split('.')[0]+'.txt' for path in img_paths]
+    
     def get_labels(self):
         """Returns dictionary of labels for YOLO training."""
         self.label_files = self.img2label_paths(self.im_files)

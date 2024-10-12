@@ -939,7 +939,7 @@ def parse_motion_model(d, ch, verbose=True):  # model_dict, input_channels(3)
             args[0] = ch[f[1]]
             args.insert(0, c1)
         elif m in (VelocityNet,VelocityNet_baseline0,VelocityNet_baseline1,VelocityNet_baseline2,
-                   MSTF, MSTF_singal_flow,VelocityNet_baseline3_split_dim,VelocityNet_baseline3_iter):
+                   MSTF, MSTF_singal_flow,VelocityNet_baseline3_split_dim,VelocityNet_baseline3_iter,MSTF_STREAM):
             c1 = [ch[f_] for f_ in f[1:]]
             c2 = c1
             args.insert(0, c1)

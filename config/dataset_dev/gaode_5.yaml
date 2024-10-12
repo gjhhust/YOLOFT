@@ -1,0 +1,27 @@
+# Ultralytics YOLO 🚀, AGPL-3.0 license
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+datasetname: MOVEHomoDETDataset_stream #MOVEDETDataset MOVEHomoDETDataset_stream MOVEHomoDETDataset
+path: /data/jiahaoguo/dataset/gaode_all/gaode_5  # dataset root dir
+style: one
+train: annotations/yolo/train.txt  # train images (relative to 'path') 4 images
+val: annotations/yolo/test.txt  # val images (relative to 'path') 4 images
+test:  annotations/yolo/test.txt # test images (optional)
+labels_dir: annotations/yolo/
+images_dir: images/
+
+val_reimgsz: True
+split_length: [8, 50] #先使用10的片段训练，再50 "all"表示不切割
+
+
+match_number: 1 #   当前帧前后各取一共几个关连帧，match_number=2即前后各取一个
+interval: 2    # 取得帧间隔当前帧
+
+rho: 4
+
+#coco eval
+eval_ann_json: /data/jiahaoguo/dataset/gaode_all/gaode_5/annotations/coco/test.json
+classes_map: [0,1]
+# Classes
+names:
+  0: static
+  1: moving

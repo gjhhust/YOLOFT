@@ -61,7 +61,9 @@ class BaseDataset(Dataset):
                  pad=0.5,
                  single_cls=False,
                  classes=None,
-                 fraction=1.0):
+                 fraction=1.0,
+                 images_dir=None,
+                 labels_dir=None):
         super().__init__()
         self.img_path = img_path
         self.imgsz = imgsz
@@ -69,6 +71,8 @@ class BaseDataset(Dataset):
         self.single_cls = single_cls
         self.prefix = prefix
         self.fraction = fraction
+        self.images_dir = images_dir
+        self.labels_dir = labels_dir
         self.im_files = self.get_img_files(self.img_path)
         self.labels = self.get_labels()
         self.update_labels(include_class=classes)  # single_cls and include_class
@@ -110,7 +114,7 @@ class BaseDataset(Dataset):
                 elif p.is_file():  # file
                     with open(p) as t:
                         t = t.read().strip().splitlines()
-                        parent =  os.path.join(self.data["path"],self.data["images_dir"])
+                        parent =  self.images_dir
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
                         # F += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
                 else:

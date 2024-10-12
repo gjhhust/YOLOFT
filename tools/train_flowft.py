@@ -7,6 +7,7 @@ from ultralytics.models import YOLOFT,YOLO
 
 # Load a COCO-pretrained RT-DETR-l model
 # model = YOLOFT("runs/detect/train22/weights/last.pt") #resume
-model = YOLO("/data/jiahaoguo/YOLOFT/config/yolo/yolo11.yaml").load("yolo11l.pt")
-# model = YOLOFT("yolo11l.pt")
-results = model.train(data="config/gaode_5.yaml",cfg="config/train/orige_stream.yaml", batch=14, epochs=30, imgsz=896, device=device,workers = 6)
+model = YOLOFT("./config/yolo/yolov8.yaml").load("yolov8l.pt") #train yoloft-l
+# model = YOLO("./config/yolo/yolov8.yaml").load("yolov8l.pt") #train yolov8-l
+
+results = model.train(data="./config/Train_gaode5_Test_gaode6.yaml",cfg="config/train/orige_stream.yaml", batch=2, epochs=30, imgsz=896, device=device,workers = 6)

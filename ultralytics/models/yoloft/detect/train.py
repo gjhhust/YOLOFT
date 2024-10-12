@@ -46,7 +46,22 @@ class DetectionTrainer(BaseTrainer):
             batch (int, optional): Size of batches, this is for `rect`. Defaults to None.
         """
         gs = max(int(de_parallel(self.model).stride.max() if self.model else 0), 32)
-        return build_movedet_dataset(self.args, img_path, batch, self.data, mode=mode, rect=mode == 'val', stride=gs, rank=rank)
+        
+        
+        if mode == "train" and self.data["style"]=="muti":
+            images_dir = os.path.join(self.data["train_images_dir"])
+            labels_dir = os.path.join(self.data["train_labels_dir"])
+        elif mode == "val" and self.data["style"]=="muti":
+            images_dir = os.path.join(self.data["val_images_dir"])
+            labels_dir = os.path.join(self.data["val_labels_dir"])
+        elif self.data["style"]=="one":
+            images_dir = os.path.join(self.data["path"],self.data["images_dir"])
+            labels_dir = os.path.join(self.data["path"],self.data["labels_dir"])
+            
+            
+        return build_movedet_dataset(self.args, img_path, batch, self.data, mode=mode, rect=mode == 'val', stride=gs, 
+                                     images_dir=images_dir,
+                                     labels_dir=labels_dir, rank=rank)
 
     def get_dataloader(self, dataset_path, batch_size=16, rank=0, mode='train'):
         """Construct and return dataloader."""
