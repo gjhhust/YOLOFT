@@ -46,7 +46,7 @@ dropout: 0.0  # (float) use dropout regularization (classify train only)
 
 # Val/Test settings ----------------------------------------------------------------------------------------------------
 val: True  # (bool) validate/test during training
-val_interval:  2 #(int)  validate/test interval during training 
+val_interval:  7 #(int)  validate/test interval during training 
 split: val  # (str) dataset split to use for validation, i.e. 'val', 'test' or 'train'
 save_json: True  # (bool) save results to JSON file
 save_hybrid: False  # (bool) save hybrid version of labels (labels + additional predictions)

@@ -21,12 +21,12 @@ split_length: [10, 50] #先使用10的片段训练，再50 "all"表示不切割
 
 
 match_number: 1 #   当前帧前后各取一共几个关连帧，match_number=2即前后各取一个
-interval: 2    # 取得帧间隔当前帧
+interval: 1    # 取得帧间隔当前帧
 
 rho: 4
 
 #coco eval
-eval_ann_json: /data/jiahaoguo/dataset/gaode_all/gaode_5/annotations/cocoVID/test_vid.json
+eval_ann_json: /data/jiahaoguo/dataset/gaode_6/all_cocoVID/gaode_6.json
 classes_map: [0,1]
 # Classes
 names:
