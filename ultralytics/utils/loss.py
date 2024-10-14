@@ -916,39 +916,10 @@ class v8DetectionLoss:
             else:
                 loss[0], loss[2] = self.bbox_loss(pred_distri, pred_bboxes, anchor_points, target_bboxes, target_scores,
                                                 target_scores_sum, fg_mask)               
-            
-            # pred_kpts = (pred_bboxes[...,:2]+(pred_bboxes[...,2:]-pred_bboxes[...,:2])/2).float().clone()
-            # keypoints = (target_bboxes[...,:2]+(target_bboxes[...,2:]-target_bboxes[...,:2])/2).float().clone()
-            # for i in range(batch_size):   
-            #     idx = target_gt_idx[i][fg_mask[i]]
-            #     gt_kpt = keypoints[i][idx]  # (n, 2)
-            #     n = gt_kpt.size(0)
-            #     if n < 1:
-            #         continue
-            #     ones_column = torch.ones((n, 1), dtype=gt_kpt.dtype, device=gt_kpt.device)
-            #     gt_kpt = torch.cat((gt_kpt, ones_column), dim=1)
-            #     area = xyxy2xywh(target_bboxes[i][fg_mask[i]])[:, 2:].prod(1, keepdim=True)
-            #     pred_kpt = pred_kpts[i][fg_mask[i]]
-                # loss[3] += self.centerPoint_loss(pred_kpt, gt_kpt, area)  # cpt loss
-                # if torch.isnan(loss[3]).any(): 
-                    # import pdb;pdb.set_trace()
                 
-        if self.hyp.loss_mode == "wasserstein":
-            loss[0] *= self.hyp.wasserstein_loss / batch_size 
-            loss[1] *= self.hyp.cls
-            loss[2] = 0
-            loss[3] = 0
-        if self.hyp.loss_mode == "cpt":
-            loss[0] *= self.hyp.box  # box gain
-            loss[1] *= self.hyp.cls  # cls gain
-            loss[2] *= self.hyp.dfl  # dfl gain
-            loss[3] *= self.hyp.cpt / batch_size 
-        else:
-            loss[0] *= self.hyp.box  # box gain
-            loss[1] *= self.hyp.cls  # cls gain
-            loss[2] *= self.hyp.dfl  # dfl gain
-            # for i, loss_info in enumerate(aux_losses):
-            #     loss[3+i] = loss_info["k"] * loss_info["loss"]
+        loss[0] *= self.hyp.box  # box gain
+        loss[1] *= self.hyp.cls  # cls gain
+        loss[2] *= self.hyp.dfl  # dfl gain
 
         return loss.sum() * batch_size, loss.detach()  # loss(box, cls, dfl)
 
