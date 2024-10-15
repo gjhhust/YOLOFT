@@ -51,7 +51,7 @@ class YOLODataset(BaseDataset):
         #val
         coco_data = None
         if "eval_ann_json" in self.data:
-            with open(self.data["eval_ann_json"], 'r', encoding='utf-8') as f:
+            with open(self.data["eval_ann_json"], 'r', encoding='utf-8') as coco_file:
                 coco_data = json.load(coco_file)
 
         for i,image_path in enumerate(self.im_files):
@@ -462,7 +462,7 @@ class MOVEDETDataset(BaseDataset):
         #val
         coco_data = None
         if "eval_ann_json" in self.data:
-            with open(self.data["eval_ann_json"], 'r', encoding='utf-8') as f:
+            with open(self.data["eval_ann_json"], 'r', encoding='utf-8') as coco_file:
                 coco_data = json.load(coco_file)
 
         # Create a dictionary that groups images by video name
