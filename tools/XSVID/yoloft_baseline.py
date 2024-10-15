@@ -5,6 +5,7 @@ import yaml
 from ultralytics.models import YOLOFT
 import os
 from analy_log import extract_best_results
+import traceback
 
 def read_yaml(path):
     """Reads and returns the contents of a YAML file"""
@@ -78,7 +79,7 @@ def train_model(repeats, model_config_path, pretrain_model, dataset_config_path,
             print(f"Training session {i+1} completed.")
         except Exception as e:
             print(f"An error occurred during training session {i+1}: {e}")
-
+            traceback.print_exc()
     # Close log file
     sys.stdout.close()
     sys.stdout = sys.__stdout__
@@ -91,13 +92,13 @@ def train_model(repeats, model_config_path, pretrain_model, dataset_config_path,
 
 if __name__ == "__main__":
     # use export CUDA_VISIBLE_DEVICES=0,1,2,3 #使用这个命令来控制运行的设备
-    repeats = 3
+    repeats = 2
     model_config_path = "config/yoloft_dev/yoloftv2-C_DCN-L.yaml"
     pretrain_model = "yolov8l.pt"
-    dataset_config_path = "config/dataset_dev/Train_minitrain6_Test_minigaode6.yaml"
-    training_config_path = "config/train/orige_stream_trendloss.yaml"
+    dataset_config_path = "config/dataset_dev/Train_gaode5_Test_minigaode6.yaml"
+    training_config_path = "config/train/orige_stream_noval.yaml"
     batch_size = 9
-    epochs = 30
+    epochs = 21
     img_size = 896
     workers = 6
 

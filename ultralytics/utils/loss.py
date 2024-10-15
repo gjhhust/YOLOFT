@@ -333,14 +333,16 @@ class BboxLoss(nn.Module):
             if support_bboxes is not None:
                 # 计算当前目标和支持目标之间的IoU
                 pair_iou = bboxes_iou(target_bboxes[fg_mask], support_bboxes, False)
-                max_iou, _ = torch.max(pair_iou, dim=1)
-                
-                # 根据阈值调整IoU权重
-                trend_weight = torch.where(max_iou >= self.ignore_thr, 1 / (max_iou ** self.gamma + 1e-8), torch.tensor(1 / self.ignore_value, device=max_iou.device))
-                iou_weight = (trend_weight * loss_iou.sum()) / (trend_weight * loss_iou).sum()
-                iou_weight = iou_weight.detach()
-                
-                loss_iou = (weight * iou_weight * loss_iou).sum() / (target_scores_sum)
+                if pair_iou.numel() != 0:
+                    max_iou, _ = torch.max(pair_iou, dim=1)
+                    # 根据阈值调整IoU权重
+                    trend_weight = torch.where(max_iou >= self.ignore_thr, 1 / (max_iou ** self.gamma + 1e-8), torch.tensor(1 / self.ignore_value, device=max_iou.device))
+                    iou_weight = (trend_weight * loss_iou.sum()) / (trend_weight * loss_iou).sum()
+                    iou_weight = iou_weight.detach()
+                    
+                    loss_iou = (weight * iou_weight * loss_iou).sum() / (target_scores_sum)
+                else:
+                    loss_iou = (weight * loss_iou).sum() / (target_scores_sum)
             else:
                 loss_iou = (weight * loss_iou).sum() / (target_scores_sum)
 
@@ -803,6 +805,7 @@ class v8DetectionLoss:
             _, counts = i.unique(return_counts=True)
             counts = counts.to(dtype=torch.int32)
             out = torch.zeros(batch_size, counts.max(), 5, device=self.device)
+
             for j in range(batch_size):
                 matches = i == j
                 n = matches.sum()
