@@ -278,9 +278,10 @@ class MOVEDETDataset(BaseDataset):
                     return img["id"]
         return 0
     
-    def video_sampler_split(self, video_image_dict, mode="all",length=100, raandom_seed=100):
+    def video_sampler_split(self, video_image_dict, mode="all",length=100, raandom_seed=100, interval_mode="all"):
         '''
         mode: all split_random split_legnth
+        interval_mode all[[1,3,5],[2,4,6]], one[[1,3,5]],
         '''
         random.seed(raandom_seed)
         if mode=="all":
@@ -299,10 +300,19 @@ class MOVEDETDataset(BaseDataset):
             print(f"min length video is {self.length}")
             self.sub_video_splits = []
             # Get the full division of self.interval interval for each video
-            for video_name,video_list in video_image_dict.items():
-                for i in range(self.interval):
-                    sub_interval_list = video_list[i::self.interval]
-                    sub_interval_length_list = [sub_interval_list[i:i + self.length] for i in range(0, len(sub_interval_list), self.length)]
+            if interval_mode=="all":
+                for video_name,video_list in video_image_dict.items():
+                    for i in range(self.interval):
+                        sub_interval_list = video_list[i::self.interval]
+                        sub_interval_length_list = [sub_interval_list[j:j + self.length] for j in range(0, len(sub_interval_list), self.length)]
+                        sub_interval_length_list[-1] = sub_interval_list[-self.length:]
+                        for sub_ in sub_interval_length_list:
+                            if len(sub_) == self.length:
+                                self.sub_video_splits.append(sub_)
+            else:
+                for video_name,video_list in video_image_dict.items():
+                    sub_interval_list = video_list[::self.interval]
+                    sub_interval_length_list = [sub_interval_list[j:j + self.length] for j in range(0, len(sub_interval_list), self.length)]
                     sub_interval_length_list[-1] = sub_interval_list[-self.length:]
                     for sub_ in sub_interval_length_list:
                         if len(sub_) == self.length:
@@ -324,10 +334,18 @@ class MOVEDETDataset(BaseDataset):
                 video_length = len(video_list)-1
                 max_rate = video_length//min(length, video_length) + 1
                 split_length = random.choice([video_length//rate for rate in range(1,max_rate)])
-    
-                for i in range(self.interval):
-                    sub_interval_list = video_list[i::self.interval]
-                    sub_interval_length_list = [sub_interval_list[i:i + split_length] for i in range(0, len(sub_interval_list), split_length)]
+
+                if interval_mode=="all":
+                    for i in range(self.interval):
+                        sub_interval_list = video_list[i::self.interval]
+                        sub_interval_length_list = [sub_interval_list[j:j + split_length] for j in range(0, len(sub_interval_list), split_length)]
+                        sub_interval_length_list[-1] = sub_interval_list[-split_length:]
+                        for sub_ in sub_interval_length_list:
+                            if len(sub_) == split_length:
+                                self.sub_video_splits.append(sub_)
+                else:
+                    sub_interval_list = video_list[::self.interval]
+                    sub_interval_length_list = [sub_interval_list[j:j + split_length] for j in range(0, len(sub_interval_list), split_length)]
                     sub_interval_length_list[-1] = sub_interval_list[-split_length:]
                     for sub_ in sub_interval_length_list:
                         if len(sub_) == split_length:

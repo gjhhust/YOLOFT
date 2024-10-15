@@ -309,7 +309,7 @@ def siou_loss(pred, target, eps=1e-7, neg_gamma=False):
 
 class BboxLoss(nn.Module):
 
-    def __init__(self, reg_max, use_dfl=False, gamma=1.0, ignore_thr=0.3, ignore_value=1.4):
+    def __init__(self, reg_max, use_dfl=False, gamma=1.0, ignore_thr=0.1, ignore_value=1.2):
         """Initialize the BboxLoss module with regularization maximum, DFL settings, and trend loss weight flag."""
         super().__init__()
         self.reg_max = reg_max
