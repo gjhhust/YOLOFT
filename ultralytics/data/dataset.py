@@ -963,8 +963,6 @@ class MOVEHomoDETDataset_stream(MOVEHomoDETDataset):
     def __init__(self,*args, **kwargs):
         super().__init__(*args, **kwargs)
         self.data_fre = [0] * len(self.img_video_info)
-        for info in self.img_video_info:
-            info["is_train"] = True
         
     
     def _set_samevideo_transform(self, seed):
@@ -1069,6 +1067,9 @@ class MOVEHomoDETDataset_stream(MOVEHomoDETDataset):
         label.pop('shape', None)  # shape is for rect, remove it
         label['img'], label['ori_shape'], label['resized_shape'] = self.load_image(index, is_resize =self.data["val_reimgsz"])
         
+        if image_info["is_train"]:
+            label['pos_id'] = image_info["pos_idx"][0]
+            label['neg_id'] = image_info["neg_idx"][0]
         # if is_train:
         #     label["pos_idx"],label["neg_idx"] = image_info["pos_idx"],image_info["neg_idx"]
         
@@ -1104,6 +1105,11 @@ class MOVEHomoDETDataset_stream(MOVEHomoDETDataset):
         self._set_samevideo_transform(orige_dict["seed"]+self.epoch*10) #Same video in one epoch with consistent random seeds
         trans_dict = self.transforms(orige_dict.copy())
         
+        if 'pos_id' in orige_dict:
+            support_dict = self.get_image_and_label(orige_dict['pos_id'])
+            support_trans_dict = self.transforms(support_dict.copy())
+        else:
+            support_trans_dict = trans_dict.copy()
         # trans_dict['img_ref'] = self.get_ref_img(orige_dict["neg_idx"][0]) #The most recent frame
         # motion = self._homoDta_preprocess(tensor_numpy(trans_dict["img"]),tensor_numpy(trans_dict['img_ref']))
         # trans_dict.update(motion)
@@ -1112,6 +1118,7 @@ class MOVEHomoDETDataset_stream(MOVEHomoDETDataset):
         # self.show_transforms(orige_dict,trans_dict)
         trans_dict["index"] = index
         trans_dict["img_metas"] = orige_dict["img_metas"]
+        trans_dict["support_bboxes"] = support_trans_dict["bboxes"]
         return trans_dict  
     
     def __len__(self):
@@ -1130,7 +1137,7 @@ class MOVEHomoDETDataset_stream(MOVEHomoDETDataset):
             if k in ('img',"org_imgs","input_tensors","patch_indices","h4p"):
                 value = torch.stack(value, 0)
 
-            if k in ['masks', 'keypoints', 'bboxes', 'cls']:
+            if k in ['masks', 'keypoints', 'bboxes', 'cls', 'support_bboxes']:
                 value = torch.cat(value, 0)
 
             new_batch[k] = value

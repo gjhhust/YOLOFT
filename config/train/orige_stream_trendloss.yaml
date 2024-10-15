@@ -5,23 +5,23 @@ task: detect  # (str) YOLO task, i.e. detect, segment, classify, pose
 mode: train  # (str) YOLO mode, i.e. train, val, predict, export, track, benchmark
 
 # Train settings -------------------------------------------------------------------------------------------------------
-train_method: all #不同训练阶段详情见每个movedet的train.py
-train_slit: 20 
-datasampler: normalSampler 
-use_trend_loss_weight: False
+train_method: random-all #all boxnet homonet homonet-all
+train_slit: 4
+datasampler:  streamSampler #使得生成的index和视频关联
+use_trend_loss_weight: True
 
 model:  # (str, optional) path to model file, i.e. yolov8n.pt, yolov8n.yaml
 data:  # (str, optional) path to data file, i.e. coco128.yaml
 epochs: 100  # (int) number of epochs to train for
 patience: 50  # (int) epochs to wait for no observable improvement for early stopping of training
 batch: 16  # (int) number of images per batch (-1 for AutoBatch)
-imgsz: 640  # (int | list) input images size as int for train and val modes, or list[w,h] for predict and export modes
+imgsz: 1024  # (int | list) input images size as int for train and val modes, or list[w,h] for predict and export modes
 save: True  # (bool) save train checkpoints and predict results
-save_period: -1 # (int) Save checkpoint every x epochs (disabled if < 1)
+save_period: 5 # (int) Save checkpoint every x epochs (disabled if < 1)
 cache: False  # (bool) True/ram, disk or False. Use cache for data loading
 device:  # (int | str | list, optional) device to run on, i.e. cuda device=0 or device=0,1,2,3 or device=cpu
-workers: 8  # (int) number of worker threads for data loading (per RANK if DDP)
-project:  # (str, optional) project name
+workers: 20  # (int) number of worker threads for data loading (per RANK if DDP)
+project: yoloft # (str, optional) project name
 name:  # (str, optional) experiment name, results saved to 'project/name' directory
 exist_ok: False  # (bool) whether to overwrite existing experiment
 pretrained: True  # (bool | str) whether to use a pretrained model (bool) or a model to load weights from (str)
@@ -32,7 +32,9 @@ deterministic: True  # (bool) whether to enable deterministic mode
 single_cls: False  # (bool) train multi-class data as single-class
 rect: False  # (bool) rectangular training if mode='train' or rectangular validation if mode='val'
 cos_lr: False  # (bool) use cosine learning rate scheduler
-close_mosaic: 10  # (int) disable mosaic augmentation for final epochs
+close_mosaic: 0  # (int) disable mosaic augmentation for final epochs
+# train_split: 60 # (int) 0-60 epochs训练homo网络，60-max训练bbox
+
 resume: True  # (bool) resume training from last checkpoint
 amp: True  # (bool) Automatic Mixed Precision (AMP) training, choices=[True, False], True runs AMP check
 fraction: 1.0  # (float) dataset fraction to train on (default is 1.0, all images in train set)
@@ -47,8 +49,7 @@ dropout: 0.0  # (float) use dropout regularization (classify train only)
 val: True  # (bool) validate/test during training
 val_interval:  5 #(int)  validate/test interval during training 
 split: val  # (str) dataset split to use for validation, i.e. 'val', 'test' or 'train'
-val_interval:  5 #(int)  validate/test interval during training 
-save_json: False  # (bool) save results to JSON file
+save_json: True  # (bool) save results to JSON file
 save_hybrid: False  # (bool) save hybrid version of labels (labels + additional predictions)
 conf:  # (float, optional) object confidence threshold for detection (default 0.25 predict, 0.001 val)
 iou: 0.7  # (float) intersection over union (IoU) threshold for NMS
@@ -96,12 +97,11 @@ warmup_momentum: 0.8  # (float) warmup initial momentum
 warmup_bias_lr: 0.1  # (float) warmup initial bias lr
 
 loss_mode: normal #normal cpt wasserstein
+
 wasserstein_loss: 10.0
 cpt_loss: 5.0  # (float) centerpoint loss gain
-
 mov: 0.2
 homo: 1.0
-
 box: 7.5  # (float) box loss gain
 cls: 0.5  # (float) cls loss gain (scale with pixels)
 dfl: 1.5  # (float) dfl loss gain
@@ -113,16 +113,32 @@ nbs: 64  # (int) nominal batch size
 hsv_h: 0.015  # (float) image HSV-Hue augmentation (fraction)
 hsv_s: 0.7  # (float) image HSV-Saturation augmentation (fraction)
 hsv_v: 0.4  # (float) image HSV-Value augmentation (fraction)
-degrees: 0.0  # (float) image rotation (+/- deg)
-translate: 0.1  # (float) image translation (+/- fraction)
-scale: 0.5  # (float) image scale (+/- gain)
+degrees: 2.0  # (float) image rotation (+/- deg)
+translate: 0.02  # (float) image translation (+/- fraction)
+scale: 0.2  # (float) image scale (+/- gain)
 shear: 0.0  # (float) image shear (+/- deg)
-perspective: 0.0  # (float) image perspective (+/- fraction), range 0-0.001
+perspective: 0.0001  # (float) image perspective (+/- fraction), range 0-0.001
 flipud: 0.0  # (float) image flip up-down (probability)
 fliplr: 0.5  # (float) image flip left-right (probability)
-mosaic: 1.0  # (float) image mosaic (probability)
+mosaic: 0.0  # (float) image mosaic (probability)
 mixup: 0.0  # (float) image mixup (probability)
 copy_paste: 0.0  # (float) segment copy-paste (probability)
+
+# label_smoothing: 0.0  # (float) label smoothing (fraction)
+# nbs: 64  # (int) nominal batch size
+# hsv_h: 0.015  # (float) image HSV-Hue augmentation (fraction)
+# hsv_s: 0.7  # (float) image HSV-Saturation augmentation (fraction)
+# hsv_v: 0.4  # (float) image HSV-Value augmentation (fraction)
+# degrees: 0.0  # (float) image rotation (+/- deg)
+# translate: 0.1  # (float) image translation (+/- fraction)
+# scale: 0.5  # (float) image scale (+/- gain)
+# shear: 0.0  # (float) image shear (+/- deg)
+# perspective: 0.0  # (float) image perspective (+/- fraction), range 0-0.001
+# flipud: 0.0  # (float) image flip up-down (probability)
+# fliplr: 0.5  # (float) image flip left-right (probability)
+# mosaic: 1.0  # (float) image mosaic (probability)
+# mixup: 0.0  # (float) image mixup (probability)
+# copy_paste: 0.0  # (float) segment copy-paste (probability)
 
 # Custom config.yaml ---------------------------------------------------------------------------------------------------
 cfg:  # (str, optional) for overriding defaults.yaml

@@ -13,10 +13,10 @@
             "justMyCode": true
         },
         {
-            "name": "Python: Train yolo",
+            "name": "Python: train_flowft",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/tools/train_yolov8_L.py",
+            "program": "${workspaceFolder}/tools/train_flowft.py",
             "console": "integratedTerminal",
             "justMyCode": false
         },

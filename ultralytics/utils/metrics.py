@@ -128,6 +128,27 @@ def bbox_iou(box1, box2, xywh=True, GIoU=False, DIoU=False, CIoU=False, eps=1e-7
     return iou  # IoU
 
 
+def bboxes_iou(boxes1, boxes2, xywh=True, eps=1e-7):
+    """
+    Calculate IoU between two sets of bounding boxes.
+
+    Args:
+        boxes1 (torch.Tensor): A tensor of shape (n, 4) representing n bounding boxes.
+        boxes2 (torch.Tensor): A tensor of shape (m, 4) representing m bounding boxes.
+        xywh (bool, optional): If True, input boxes are in (x, y, w, h) format. Defaults to True.
+        eps (float, optional): A small value to avoid division by zero. Defaults to 1e-7.
+
+    Returns:
+        torch.Tensor: A tensor of shape (n, m) containing the IoU values between each box in boxes1 and boxes2.
+    """
+    iou_matrix = torch.zeros(boxes1.size(0), boxes2.size(0), device=boxes1.device)
+
+    for i in range(boxes1.size(0)):
+        iou_matrix[i] = bbox_iou(boxes1[i:i + 1], boxes2, xywh=xywh, eps=eps)
+
+    return iou_matrix
+
+
 def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False, eps=1e-6, constant=5.0):#xyxy
     assert mode in ['iou', 'iof', 'giou', 'normalized_giou', 'ciou', 'diou', 'wasserstein'], f'Unsupported mode {mode}'
     # Either the boxes are empty or the length of boxes's last dimenstion is 4

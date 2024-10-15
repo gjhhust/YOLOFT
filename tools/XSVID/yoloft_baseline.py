@@ -90,15 +90,15 @@ def train_model(repeats, model_config_path, pretrain_model, dataset_config_path,
 
 
 if __name__ == "__main__":
-    # use export CUDA_VISIBLE_DEVICES=0,1,2,3
+    # use export CUDA_VISIBLE_DEVICES=0,1,2,3 #使用这个命令来控制运行的设备
     repeats = 3
-    model_config_path = "./config/yoloft/yoloft-L.yaml"
+    model_config_path = "config/yoloft_dev/yoloftv2-C_DCN-L.yaml"
     pretrain_model = "yolov8l.pt"
-    dataset_config_path = "./config/gaode_5.yaml"
-    training_config_path = "config/train/orige_stream_1.yaml"
-    batch_size = 10
-    epochs = 32
-    img_size = 800
+    dataset_config_path = "config/dataset_dev/Train_minitrain6_Test_minigaode6.yaml"
+    training_config_path = "config/train/orige_stream_trendloss.yaml"
+    batch_size = 9
+    epochs = 30
+    img_size = 896
     workers = 6
 
     train_model(repeats, model_config_path, pretrain_model, dataset_config_path, training_config_path, batch_size, epochs, img_size, workers)

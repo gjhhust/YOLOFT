@@ -9,6 +9,7 @@ from ultralytics.utils.ops import crop_mask, xywh2xyxy, xyxy2xywh
 from ultralytics.utils.tal import TaskAlignedAssigner, dist2bbox, make_anchors
 
 from .metrics import bbox_iou
+from yolox.utils import bboxes_iou
 from .tal import bbox2dist
 
 
@@ -308,37 +309,62 @@ def siou_loss(pred, target, eps=1e-7, neg_gamma=False):
 
 class BboxLoss(nn.Module):
 
-    def __init__(self, reg_max, use_dfl=False):
-        """Initialize the BboxLoss module with regularization maximum and DFL settings."""
+    def __init__(self, reg_max, use_dfl=False, gamma=1.0, ignore_thr=0.3, ignore_value=1.4):
+        """Initialize the BboxLoss module with regularization maximum, DFL settings, and trend loss weight flag."""
         super().__init__()
         self.reg_max = reg_max
         self.use_dfl = use_dfl
+        self.gamma = gamma  # 控制趋势权重的gamma值
+        self.ignore_thr = ignore_thr  # 忽略的IoU阈值
+        self.ignore_value = ignore_value  # 忽略的IoU值
 
-    def forward(self, pred_dist, pred_bboxes, anchor_points, target_bboxes, target_scores, target_scores_sum, fg_mask, bbox_siou=False):
-        """IoU loss."""
+    def forward(self, pred_dist, pred_bboxes, anchor_points, target_bboxes, target_scores, target_scores_sum, fg_mask, support_bboxes, bbox_siou=False):
+        """IoU loss with optional trend loss weighting."""
         weight = target_scores.sum(-1)[fg_mask].unsqueeze(-1)
         if bbox_siou:
             pass
         else:
             iou = bbox_iou(pred_bboxes[fg_mask], target_bboxes[fg_mask], xywh=False, CIoU=True)
-            loss_iou = ((1.0 - iou) * weight).sum() / target_scores_sum
-                    # + (F.l1_loss(pred_bboxes[fg_mask], target_bboxes[fg_mask],
-                    #            reduction='none') * weight).sum() / target_scores_sum / 100
+
+            # IoU损失
+            # loss_iou = ((1.0 - iou) * weight).sum() / target_scores_sum
+            loss_iou = 1.0 - iou
+            
+            if support_bboxes is not None:
+                # 计算当前目标和支持目标之间的IoU
+                pair_iou = bboxes_iou(target_bboxes[fg_mask], support_bboxes, False)
+                max_iou, _ = torch.max(pair_iou, dim=1)
+                
+                # 根据阈值调整IoU权重
+                trend_weight = torch.where(max_iou >= self.ignore_thr, 1 / (max_iou ** self.gamma + 1e-8), torch.tensor(1 / self.ignore_value, device=max_iou.device))
+                iou_weight = (trend_weight * loss_iou.sum()) / (trend_weight * loss_iou).sum()
+                iou_weight = iou_weight.detach()
+                
+                loss_iou = (weight * iou_weight * loss_iou).sum() / (target_scores_sum)
+            else:
+                loss_iou = (weight * loss_iou).sum() / (target_scores_sum)
 
         # DFL loss
         if self.use_dfl:
             target_ltrb = bbox2dist(anchor_points, target_bboxes, self.reg_max)
-            loss_dfl = self._df_loss(pred_dist[fg_mask].view(-1, self.reg_max + 1), target_ltrb[fg_mask]) * weight
-            loss_dfl = loss_dfl.sum() / target_scores_sum
+            # loss_dfl = self._df_loss(pred_dist[fg_mask].view(-1, self.reg_max + 1), target_ltrb[fg_mask]) * weight * dfl_weight
+            loss_dfl = self._df_loss(pred_dist[fg_mask].view(-1, self.reg_max + 1), target_ltrb[fg_mask])
+            
+            if support_bboxes is not None:
+                dfl_weight = (trend_weight * loss_dfl.sum()) / (trend_weight * loss_dfl).sum()
+                dfl_weight = dfl_weight.detach()
+                
+                loss_dfl = (loss_dfl * weight * dfl_weight).sum() / (target_scores_sum)
+            else:
+                loss_dfl = (loss_dfl * weight).sum() / (target_scores_sum)
         else:
             loss_dfl = torch.tensor(0.0).to(pred_dist.device)
-
+        
         return loss_iou, loss_dfl
 
     @staticmethod
     def _df_loss(pred_dist, target):
         """Return sum of left and right DFL losses."""
-        # Distribution Focal Loss (DFL) proposed in Generalized Focal Loss https://ieeexplore.ieee.org/document/9792391
         tl = target.long()  # target left
         tr = tl + 1  # target right
         wl = tr - target  # weight left
@@ -740,6 +766,8 @@ class v8DetectionLoss:
         m = model.model[-1]  # Detect() module
 
         self.pred_index = m.nl 
+        self.use_trend_loss_weight=h.use_trend_loss_weight
+        
         # save topk bbox
         if hasattr(m, 'buffer'):
             # import pdb;pdb.set_trace()
@@ -782,6 +810,7 @@ class v8DetectionLoss:
                     out[j, :n] = targets[matches, 1:]
             out[..., 1:5] = xywh2xyxy(out[..., 1:5].mul_(scale_tensor))
         return out
+    
 
     def bbox_decode(self, anchor_points, pred_dist):
         """Decode predicted object bounding box coordinates from anchor points and distribution."""
@@ -849,8 +878,7 @@ class v8DetectionLoss:
         loss = torch.zeros(3+len(aux_losses), device=self.device)  # box, cls, dfl
         pred_distri, pred_scores = torch.cat([xi.view(feats[0].shape[0], self.no, -1) for xi in feats], 2).split(
             (self.reg_max * 4, self.nc), 1)
-        
-
+    
         pred_scores = pred_scores.permute(0, 2, 1).contiguous()
         pred_distri = pred_distri.permute(0, 2, 1).contiguous()
 
@@ -862,7 +890,14 @@ class v8DetectionLoss:
         # targets
         targets = torch.cat((batch['batch_idx'].view(-1, 1), batch['cls'].view(-1, 1), batch['bboxes']), 1)
         targets = self.preprocess(targets.to(self.device), batch_size, scale_tensor=imgsz[[1, 0, 1, 0]])
-        gt_labels, gt_bboxes = targets.split((1, 4), 2)  # cls, xyxy
+        gt_labels, gt_bboxes = targets.split((1, 4), 2)  # cls, xyxy   
+        
+        if self.use_trend_loss_weight and "support_bboxes" in batch:
+            support_bboxes = xywh2xyxy(batch["support_bboxes"].to(self.device).mul_(imgsz[[1, 0, 1, 0]]))
+        else:
+            support_bboxes = None
+                     
+        
         mask_gt = gt_bboxes.sum(2, keepdim=True).gt_(0)
 
 
@@ -915,7 +950,8 @@ class v8DetectionLoss:
                 loss[0] = self.Wasserstein_loss(pred_bboxes[fg_mask],target_bboxes[fg_mask])
             else:
                 loss[0], loss[2] = self.bbox_loss(pred_distri, pred_bboxes, anchor_points, target_bboxes, target_scores,
-                                                target_scores_sum, fg_mask)               
+                                            target_scores_sum, fg_mask, support_bboxes)        
+          
                 
         loss[0] *= self.hyp.box  # box gain
         loss[1] *= self.hyp.cls  # cls gain

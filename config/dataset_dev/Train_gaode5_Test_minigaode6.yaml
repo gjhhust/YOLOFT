@@ -20,8 +20,8 @@ val_reimgsz: True
 split_length: [10, 50] #先使用10的片段训练，再50 "all"表示不切割
 
 
-match_number: 1 #   当前帧前后各取一共几个关连帧，match_number=2即前后各取一个
-interval: 1    # 取得帧间隔当前帧
+match_number: 1  #当前帧前后各取一共几个关连帧，match_number=2即前后各取一个
+interval: 2    # 取得帧间隔当前帧
 
 rho: 4
 

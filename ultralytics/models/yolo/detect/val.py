@@ -261,8 +261,9 @@ class DetectionValidator(BaseValidator):
         bar = tqdm(self.dataloader, desc, n_batches, bar_format=TQDM_BAR_FORMAT)
         self.init_metrics(de_parallel(model))
         self.jdict = []  # empty before each val
-        self._reset_coco_eval()
         for batch_i, batch in enumerate(bar):
+            # if batch_i>5:
+            #     break
             self.run_callbacks('on_val_batch_start')
             self.batch_i = batch_i
             # Preprocess
@@ -451,16 +452,16 @@ class DetectionValidator(BaseValidator):
                 'bbox': [round(x, 3) for x in b],
                 'score': round(p[4], 5)})
 
-    def eval_json(self, stats):
+    def eval_json(self, stats, print_log=True):
         """Evaluates YOLO output in JSON format and returns performance statistics."""
         if self.args.save_json and self.is_coco and len(self.jdict):
             anno_json = Path(self.data['eval_ann_json'])  # annotations
             pred_json = self.save_dir / 'predictions.json'  # predictions
-            LOGGER.info(f'\nEvaluating pycocotools mAP using {pred_json} and {anno_json}...')
+            if print_log:
+                LOGGER.info(f'\nEvaluating pycocotools mAP using {pred_json} and {anno_json}...')
             try:  # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb
                 check_requirements('pycocotools>=2.0.6')
                 from pycocotools.coco import COCO  # noqa
-                # from pycocotools.cocoeval import COCOeval  # noqa
                 from ultralytics.data.cocoeval import COCOeval  # noqa
 
                 for x in anno_json, pred_json:
@@ -473,8 +474,17 @@ class DetectionValidator(BaseValidator):
                 eval.evaluate()
                 eval.accumulate()
                 eval.summarize()
-                print(eval.stats)
-                stats[self.metrics.keys[-1]], stats[self.metrics.keys[-2]] = eval.stats[:2]  # update mAP50-95 and mAP50
+                # print(self.metrics.keys[-3],self.metrics.keys[-2], self.metrics.keys[-1])
+                # stats[self.metrics.keys[-2]], stats[self.metrics.keys[-1]], stats[self.metrics.keys[-3]]  = eval.stats[:3]  # update  mAP50-95 mAP75  mAP50
+                stats["metrics/mAP50-95(B)"] = eval.stats[0]
+                stats["metrics/mAP75(B)"] = eval.stats[1]
+                stats["metrics/mAP50(B)"] = eval.stats[2]
+                stats["metrics/mAP(0-12)"] = eval.stats[3]
+                stats["metrics/mAP(12-20)"] = eval.stats[4]
+                stats["metrics/mAP(20-32)"] = eval.stats[5]
+                stats["metrics/mAP(small)"] = eval.stats[6]
+                stats["metrics/mAP(medium)"] = eval.stats[7]
+                stats["metrics/mAP(large)"] = eval.stats[8]
             except Exception as e:
                 LOGGER.warning(f'pycocotools unable to run: {e}')
         return stats
