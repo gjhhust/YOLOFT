@@ -231,7 +231,7 @@ class DetectionValidator(BaseValidator):
         val = self.data.get(self.args.split, '')  # validation path
         self.is_coco = ("eval_ann_json" in self.data)  # is COCO
         if self.is_coco:
-            with open(self.data["eval_ann_json"], 'r') as f:
+            with open(self.data["eval_ann_json"], 'r', encoding='utf-8') as f:
                 self.gt_cocodata = json.load(f)
 
         if "classes_map" in self.data:

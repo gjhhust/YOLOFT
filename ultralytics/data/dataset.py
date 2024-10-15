@@ -51,7 +51,7 @@ class YOLODataset(BaseDataset):
         #val
         coco_data = None
         if "eval_ann_json" in self.data:
-            with open(self.data["eval_ann_json"], 'r') as coco_file:
+            with open(self.data["eval_ann_json"], 'r', encoding='utf-8') as f:
                 coco_data = json.load(coco_file)
 
         for i,image_path in enumerate(self.im_files):
@@ -278,11 +278,12 @@ class MOVEDETDataset(BaseDataset):
                     return img["id"]
         return 0
     
-    def video_sampler_split(self, video_image_dict, mode="all",length=100, raandom_seed=100, interval_mode="all"):
+    def video_sampler_split(self, video_image_dict, mode="all",length=100, raandom_seed=100):
         '''
         mode: all split_random split_legnth
         interval_mode all[[1,3,5],[2,4,6]], one[[1,3,5]],
         '''
+        interval_mode = self.data["interval_mode"] if "interval_mode" in self.data else "all"
         random.seed(raandom_seed)
         if mode=="all":
             self.length = -1
@@ -341,15 +342,14 @@ class MOVEDETDataset(BaseDataset):
                         sub_interval_length_list = [sub_interval_list[j:j + split_length] for j in range(0, len(sub_interval_list), split_length)]
                         sub_interval_length_list[-1] = sub_interval_list[-split_length:]
                         for sub_ in sub_interval_length_list:
-                            if len(sub_) == split_length:
-                                self.sub_video_splits.append(sub_)
+                            # if len(sub_) == split_length:
+                            self.sub_video_splits.append(sub_)
                 else:
                     sub_interval_list = video_list[::self.interval]
                     sub_interval_length_list = [sub_interval_list[j:j + split_length] for j in range(0, len(sub_interval_list), split_length)]
                     sub_interval_length_list[-1] = sub_interval_list[-split_length:]
                     for sub_ in sub_interval_length_list:
-                        if len(sub_) == split_length:
-                            self.sub_video_splits.append(sub_)
+                        self.sub_video_splits.append(sub_)
 
         if self.rank != -1: #multicard
             world_size = dist.get_world_size()
@@ -462,7 +462,7 @@ class MOVEDETDataset(BaseDataset):
         #val
         coco_data = None
         if "eval_ann_json" in self.data:
-            with open(self.data["eval_ann_json"], 'r') as coco_file:
+            with open(self.data["eval_ann_json"], 'r', encoding='utf-8') as f:
                 coco_data = json.load(coco_file)
 
         # Create a dictionary that groups images by video name
