@@ -343,8 +343,10 @@ class BboxLoss(nn.Module):
                     loss_iou = (weight * iou_weight * loss_iou).sum() / (target_scores_sum)
                 else:
                     loss_iou = (weight * loss_iou).sum() / (target_scores_sum)
+                    trend_weight = None
             else:
                 loss_iou = (weight * loss_iou).sum() / (target_scores_sum)
+                trend_weight = None
 
         # DFL loss
         if self.use_dfl:
@@ -352,7 +354,7 @@ class BboxLoss(nn.Module):
             # loss_dfl = self._df_loss(pred_dist[fg_mask].view(-1, self.reg_max + 1), target_ltrb[fg_mask]) * weight * dfl_weight
             loss_dfl = self._df_loss(pred_dist[fg_mask].view(-1, self.reg_max + 1), target_ltrb[fg_mask])
             
-            if support_bboxes is not None:
+            if support_bboxes is not None and trend_weight is not None:
                 dfl_weight = (trend_weight * loss_dfl.sum()) / (trend_weight * loss_dfl).sum()
                 dfl_weight = dfl_weight.detach()
                 

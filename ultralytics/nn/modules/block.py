@@ -2653,9 +2653,6 @@ class MSTF_STREAM(nn.Module): #
         fmaps_new = x[1:]  #3,B,C,H,W The incoming scale must be from large to small
         
         [rurrent_x2, rurrent_x1, rurrent_x0] = fmaps_new
-        
-        if fmaps_new[0].device.type == "cpu" or (img_metas[0]["epoch"] < self.epoch_train and self.training):
-            return x[1:]    
 
         rurrent_fpn_out0 = self.lateral_conv0(rurrent_x0)  # 1024->512/32
         rurrent_f_out0 = F.interpolate(rurrent_fpn_out0, size=rurrent_x1.shape[2:4], mode='nearest')  # 512/16
@@ -2681,9 +2678,15 @@ class MSTF_STREAM(nn.Module): #
         [support_pan_out2, support_pan_out1, support_pan_out0] = fmaps_old
         
         # 融合
-        pan_out2 = torch.cat([self.jian2(rurrent_pan_out2), self.jian2(support_pan_out2)], dim=1) + rurrent_pan_out2
-        pan_out1 = torch.cat([self.jian1(rurrent_pan_out1), self.jian1(support_pan_out1)], dim=1) + rurrent_pan_out1
-        pan_out0 = torch.cat([self.jian0(rurrent_pan_out0), self.jian0(support_pan_out0)], dim=1) + rurrent_pan_out0
+                
+        if fmaps_new[0].device.type == "cpu" or (img_metas[0]["epoch"] < self.epoch_train and self.training):
+            pan_out2 = torch.cat([self.jian2(rurrent_pan_out2), self.jian2(support_pan_out2)], dim=1) + rurrent_x2
+            pan_out1 = torch.cat([self.jian1(rurrent_pan_out1), self.jian1(support_pan_out1)], dim=1) + rurrent_x1
+            pan_out0 = torch.cat([self.jian0(rurrent_pan_out0), self.jian0(support_pan_out0)], dim=1) + rurrent_x0
+        else:
+            pan_out2 = torch.cat([self.jian2(rurrent_pan_out2), self.jian2(support_pan_out2)], dim=1) + rurrent_pan_out2
+            pan_out1 = torch.cat([self.jian1(rurrent_pan_out1), self.jian1(support_pan_out1)], dim=1) + rurrent_pan_out1
+            pan_out0 = torch.cat([self.jian0(rurrent_pan_out0), self.jian0(support_pan_out0)], dim=1) + rurrent_pan_out0
         
         return [pan_out2, pan_out1, pan_out0]
 
