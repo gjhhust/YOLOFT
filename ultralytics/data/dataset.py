@@ -147,6 +147,7 @@ class YOLODataset(BaseDataset):
         self.label_files = self.img2label_paths(self.im_files)
         # import pdb;pdb.set_trace()
         cache_path = Path(combine_unique_folders(set(self.labels_dir))).with_suffix('.cache')
+        os.makedirs(os.path.dirname(cache_path),exist_ok=True)
         try:
             import gc
             gc.disable()  # reduce pickle load time https://github.com/ultralytics/ultralytics/pull/1585
@@ -383,11 +384,11 @@ class MOVEDETDataset(BaseDataset):
         
         if self.rank == 0 or self.rank == -1:
             print(f"\n*******************{'[Train]' if self.augment else '[Test]'}dataset split info************************")
-            print(f"len sub videos is {[len(spi) for spi in self.sub_video_splits]}")
+            print(f"len sub videos is {[len(spi) for spi in self.sub_video_splits[:10]]} (print 10 number)")
             print(f"per GPU frames len: {self.muti_rank_sub_video_len}")
             print(f"per GPU video number: {[len(sub_indexs) for sub_indexs in self.muti_rank_indices_splits]}")
-            print(f"muti_rank_indices_splits: ")
-            print(self.muti_rank_indices_splits)
+            # print(f"muti_rank_indices_splits: ")
+            # print(self.muti_rank_indices_splits)
             print(f"*************************************************")
 
         #init the first frame of the subvideo
@@ -694,7 +695,8 @@ class MOVEDETDataset(BaseDataset):
         """Returns dictionary of labels for YOLO training."""
         self.label_files = self.img2label_paths(self.im_files)
         # import pdb;pdb.set_trace()
-        cache_path = Path(combine_unique_folders(set(self.labels_dir))).with_suffix('.cache')
+        cache_path = Path(combine_unique_folders([os.path.splitext(p)[0] for p in self.img_path])).with_suffix('.cache')
+        os.makedirs(os.path.dirname(cache_path),exist_ok=True)
         try:
             import gc
             gc.disable()  # reduce pickle load time https://github.com/ultralytics/ultralytics/pull/1585

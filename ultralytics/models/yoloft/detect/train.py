@@ -262,7 +262,7 @@ class DetectionTrainer(BaseTrainer):
                 self.ema.update_attr(self.model, include=['yaml', 'nc', 'args', 'names', 'stride', 'class_weights'])
                 final_epoch = (epoch + 1 == self.epochs) or self.stopper.possible_stop
 
-                if (self.args.val and (epoch+1)%self.args.val_interval == 0)  or final_epoch:
+                if (self.args.val and (epoch+1)%self.args.val_interval == 0):
                     self.metrics, self.fitness = self.validate()
                 self.save_metrics(metrics={**self.label_loss_items(self.tloss), **self.metrics, **self.lr})
                 self.stop = self.stopper(epoch + 1, self.fitness)

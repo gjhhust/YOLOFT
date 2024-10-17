@@ -1,0 +1,34 @@
+# Ultralytics YOLO 🚀, AGPL-3.0 license
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+
+# 任务0的第一个测试项目，使用gaode5的全部数据训练，使用gaode6全集测试
+train: /data/jiahaoguo/dataset/gaode_all/gaode_5/annotations/yolo/gaode_5.txt
+train_labels_dir: /data/jiahaoguo/dataset/gaode_all/gaode_5/annotations/yolo/
+train_images_dir: /data/jiahaoguo/dataset/gaode_all/gaode_5/images/
+
+val: /data/jiahaoguo/dataset/gaode_6/annotations/mini_val/gaode_6_mini_val.txt 
+val_labels_dir: /data/jiahaoguo/dataset/gaode_6/annotations/yolo/
+val_images_dir: /data/jiahaoguo/dataset/gaode_6/images/
+
+test: /data/jiahaoguo/dataset/gaode_6/annotations/yolo/gaode_6.txt  
+test_labels_dir: /data/jiahaoguo/dataset/gaode_6/annotations/yolo/
+test_images_dir: /data/jiahaoguo/dataset/gaode_6/images/
+
+datasetname: MOVEHomoDETDataset_stream #MOVEDETDataset MOVEHomoDETDataset_stream MOVEHomoDETDataset
+style: muti #one or muti
+val_reimgsz: True
+split_length: [10, 50] #先使用10的片段训练，再50 "all"表示不切割
+
+
+match_number: 1  #当前帧前后各取一共几个关连帧，match_number=2即前后各取一个
+interval: 2    # 取得帧间隔当前帧
+
+rho: 4
+
+#coco eval
+eval_ann_json: /data/jiahaoguo/dataset/gaode_6/all_cocoVID/gaode_6.json
+classes_map: [0,1]
+# Classes
+names:
+  0: static
+  1: moving
