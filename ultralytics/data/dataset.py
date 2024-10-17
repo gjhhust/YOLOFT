@@ -17,6 +17,33 @@ from .base import BaseDataset
 from .utils import HELP_URL, LOGGER, get_hash, img2label_paths, verify_image_label,verify_image_movelabel
 
 
+def find_common_parent(unique_label_dir):
+    # 将字符串路径转换为 Path 对象
+    paths = [Path(dir_path) for dir_path in unique_label_dir]
+    
+    # 获取每个路径的所有祖先路径
+    ancestors = [set(path.parents) for path in paths]
+    
+    # 找到所有路径的共同祖先
+    common_ancestors = set.intersection(*ancestors)
+    
+    # 如果存在共同祖先，返回最长的那个（即最深的共同父目录）
+    if common_ancestors:
+        common_parent = max(common_ancestors, key=lambda p: len(p.parts))
+    else:
+        return "./temp"
+    
+    # 提取所有子文件夹的名称
+    subfolders = [str(path.relative_to(common_parent)).split(os.sep)[0] for path in paths]
+    
+    # 将子文件夹名称组合成一个字符串
+    subfolders_str = '_'.join(subfolders)
+    
+    # 构建最终的路径
+    final_path = str(common_parent) + '/' + subfolders_str
+    
+    return final_path
+    
 class YOLODataset(BaseDataset):
     """
     Dataset class for loading object detection and/or segmentation labels in YOLO format.
@@ -119,14 +146,14 @@ class YOLODataset(BaseDataset):
         return x
     
     def img2label_paths(self,img_paths):
-        sa, sb = f'{self.images_dir}', f'{self.labels_dir}'  # /images/, /labels/ substrings
-        return [path.replace(sa, sb).split('.')[0]+'.txt' for path in img_paths]
-
+        # sa, sb = f'{self.images_dir}', f'{self.labels_dir}'  # /images/, /labels/ substrings
+        return [path.replace(sa, sb).split('.')[0]+'.txt' for path, sa, sb  in zip(img_paths, self.images_dir, self.labels_dir)]
+    
     def get_labels(self):
         """Returns dictionary of labels for YOLO training."""
         self.label_files = self.img2label_paths(self.im_files)
         # import pdb;pdb.set_trace()
-        cache_path = Path(self.label_files[0]).parent.with_suffix('.cache')
+        cache_path = Path(find_common_parent(set(self.labels_dir))).with_suffix('.cache')
         try:
             import gc
             gc.disable()  # reduce pickle load time https://github.com/ultralytics/ultralytics/pull/1585
@@ -667,14 +694,14 @@ class MOVEDETDataset(BaseDataset):
         return x
     
     def img2label_paths(self,img_paths):
-        sa, sb = f'{self.images_dir}', f'{self.labels_dir}'  # /images/, /labels/ substrings
-        return [path.replace(sa, sb).split('.')[0]+'.txt' for path in img_paths]
+        # sa, sb = f'{self.images_dir}', f'{self.labels_dir}'  # /images/, /labels/ substrings
+        return [path.replace(sa, sb).split('.')[0]+'.txt' for path, sa, sb  in zip(img_paths, self.images_dir, self.labels_dir)]
     
     def get_labels(self):
         """Returns dictionary of labels for YOLO training."""
         self.label_files = self.img2label_paths(self.im_files)
         # import pdb;pdb.set_trace()
-        cache_path = Path(self.label_files[0]).parent.with_suffix('.cache')
+        cache_path = Path(find_common_parent(set(self.labels_dir))).with_suffix('.cache')
         try:
             import gc
             gc.disable()  # reduce pickle load time https://github.com/ultralytics/ultralytics/pull/1585

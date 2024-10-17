@@ -65,15 +65,15 @@ class BaseDataset(Dataset):
                  images_dir=None,
                  labels_dir=None):
         super().__init__()
-        self.img_path = img_path
+        self.img_path = img_path if isinstance(img_path, list) else [img_path]
         self.imgsz = imgsz
         self.augment = augment
         self.single_cls = single_cls
         self.prefix = prefix
         self.fraction = fraction
-        self.images_dir = images_dir
-        self.labels_dir = labels_dir
-        self.im_files = self.get_img_files(self.img_path)
+        self.images_dir = images_dir if isinstance(images_dir, list) else [images_dir]
+        self.labels_dir = labels_dir if isinstance(labels_dir, list) else [labels_dir]
+        self.im_files, self.labels_dir, self.images_dir = self.get_img_files(self.img_path)
         self.labels = self.get_labels()
         self.update_labels(include_class=classes)  # single_cls and include_class
         self.ni = len(self.labels)  # number of images
@@ -99,14 +99,14 @@ class BaseDataset(Dataset):
 
         # Transforms
         self.transforms = self.build_transforms(hyp=hyp)
-    
-
 
     def get_img_files(self, img_path):
         """Read image files."""
         try:
             f = []  # image files
-            for p in img_path if isinstance(img_path, list) else [img_path]:
+            imgs_dir = []
+            labels_dir = []
+            for j, p in enumerate(img_path):
                 p = Path(p)  # os-agnostic
                 if p.is_dir():  # dir
                     f += glob.glob(str(p / '**' / '*.*'), recursive=True)
@@ -114,19 +114,22 @@ class BaseDataset(Dataset):
                 elif p.is_file():  # file
                     with open(p) as t:
                         t = t.read().strip().splitlines()
-                        parent =  self.images_dir
+                        parent =  self.images_dir[j]
                         f += [x.replace('./', parent) if x.startswith('./') else x for x in t]  # local to global path
                         # F += [p.parent / x.lstrip(os.sep) for x in t]  # local to global path (pathlib)
+                        labels_dir += [self.labels_dir[j] for _ in t]
+                        imgs_dir += [self.images_dir[j] for _ in t]
                 else:
                     raise FileNotFoundError(f'{self.prefix}{p} does not exist')
-            im_files = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS)
+            # im_files = sorted(x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS)
+            im_files = [x.replace('/', os.sep) for x in f if x.split('.')[-1].lower() in IMG_FORMATS]
             # self.img_files = sorted([x for x in f if x.suffix[1:].lower() in IMG_FORMATS])  # pathlib
             assert im_files, f'{self.prefix}No images found'
         except Exception as e:
             raise FileNotFoundError(f'{self.prefix}Error loading data from {img_path}\n{HELP_URL}') from e
         if self.fraction < 1:
             im_files = im_files[:round(len(im_files) * self.fraction)]
-        return im_files
+        return im_files, labels_dir, imgs_dir
 
     def update_labels(self, include_class: Optional[list]):
         """include_class, filter labels to include only these classes (optional)."""

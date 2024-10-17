@@ -49,11 +49,11 @@ class DetectionTrainer(BaseTrainer):
         
         
         if mode == "train" and self.data["style"]=="muti":
-            images_dir = os.path.join(self.data["train_images_dir"])
-            labels_dir = os.path.join(self.data["train_labels_dir"])
+            images_dir = self.data["train_images_dir"]
+            labels_dir = self.data["train_labels_dir"]
         elif mode == "val" and self.data["style"]=="muti":
-            images_dir = os.path.join(self.data["val_images_dir"])
-            labels_dir = os.path.join(self.data["val_labels_dir"])
+            images_dir = self.data["val_images_dir"]
+            labels_dir = self.data["val_labels_dir"]
         elif self.data["style"]=="one":
             images_dir = os.path.join(self.data["path"],self.data["images_dir"])
             labels_dir = os.path.join(self.data["path"],self.data["labels_dir"])

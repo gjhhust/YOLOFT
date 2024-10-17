@@ -93,11 +93,11 @@ def train_model(repeats, model_config_path, pretrain_model, dataset_config_path,
 if __name__ == "__main__":
     # use export CUDA_VISIBLE_DEVICES=0,1,2,3 #使用这个命令来控制运行的设备
     repeats = 2
-    model_config_path = "config/yoloft_dev/yoloftv2-L-DCN.yaml"
-    pretrain_model = "yolov8l.pt"
+    model_config_path = "config/yoloft_dev/yoloftV2-s4-11-L.yaml"
+    pretrain_model = "yolo11l.pt"
     dataset_config_path = "config/dataset_dev/Train_minitrain6_Test_minigaode6.yaml"
-    training_config_path = "config/train/orige_stream_noval.yaml"
-    batch_size = 12*2
+    training_config_path = "config/train/orige_stream_trendloss.yaml"
+    batch_size = 14*2
     epochs = 21
     img_size = 896
     workers = 6

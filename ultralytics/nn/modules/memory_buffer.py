@@ -649,6 +649,8 @@ class StreamBuffer(object):
         result_first_frame = [img_metas[i]["is_first"] for i in range(b)]
         
         # must init
+        if torch.is_tensor(self.spatial_shapes) and (self.spatial_shapes.device != spatial_shapes.device):
+            self.spatial_shapes = None
         if self.spatial_shapes is None or (not torch.equal(self.spatial_shapes,spatial_shapes)) or self.memory_fmaps is None:
             self.spatial_shapes = spatial_shapes.clone()
             self.memory_fmaps = [f.detach().clone() for f in memory_now]

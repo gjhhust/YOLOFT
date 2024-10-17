@@ -30,7 +30,7 @@ backbone:
 
 # YOLO11n head
 head:
-  - [[0, 6, 8, -1], 1, MSTF, [256, 6, [1,1,1], [3,3,3]]] # hidden_dim=64, start epoch                11
+  - [[0, 6, 8, -1], 1, MSTF_STREAM, [4, 1.0, 1.0]] # hidden_dim=64, start epoch                11
   - [13, 1, List_Split, [0]] #1/8                             12
   - [13, 1, List_Split, [1]] #1/16                            13
   - [13, 1, List_Split, [2]] #1/32                            14
