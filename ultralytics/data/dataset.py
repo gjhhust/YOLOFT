@@ -17,32 +17,25 @@ from .base import BaseDataset
 from .utils import HELP_URL, LOGGER, get_hash, img2label_paths, verify_image_label,verify_image_movelabel
 
 
-def find_common_parent(unique_label_dir):
-    # 将字符串路径转换为 Path 对象
-    paths = [Path(dir_path) for dir_path in unique_label_dir]
+def combine_unique_folders(paths):
+    # 存储所有文件夹名称
+    folder_names = []
+
+    # 遍历每个路径，提取文件夹名称
+    for path in paths:
+        # 将字符串路径转换为 Path 对象
+        path_obj = Path(path)
+        
+        # 提取路径中的所有文件夹名称
+        folder_names.extend(part for part in path_obj.parts if part)
+
+    # 使用 set 去重
+    unique_folder_names = set(folder_names)
     
-    # 获取每个路径的所有祖先路径
-    ancestors = [set(path.parents) for path in paths]
+    # 将独特的文件夹名称用 "_" 连接起来
+    combined_string = '_'.join(unique_folder_names)
     
-    # 找到所有路径的共同祖先
-    common_ancestors = set.intersection(*ancestors)
-    
-    # 如果存在共同祖先，返回最长的那个（即最深的共同父目录）
-    if common_ancestors:
-        common_parent = max(common_ancestors, key=lambda p: len(p.parts))
-    else:
-        return "./temp"
-    
-    # 提取所有子文件夹的名称
-    subfolders = [str(path.relative_to(common_parent)).split(os.sep)[0] for path in paths]
-    
-    # 将子文件夹名称组合成一个字符串
-    subfolders_str = '_'.join(subfolders)
-    
-    # 构建最终的路径
-    final_path = str(common_parent) + '/' + subfolders_str
-    
-    return final_path
+    return os.path.join(list(paths)[0],combined_string)
     
 class YOLODataset(BaseDataset):
     """
@@ -153,7 +146,7 @@ class YOLODataset(BaseDataset):
         """Returns dictionary of labels for YOLO training."""
         self.label_files = self.img2label_paths(self.im_files)
         # import pdb;pdb.set_trace()
-        cache_path = Path(find_common_parent(set(self.labels_dir))).with_suffix('.cache')
+        cache_path = Path(combine_unique_folders(set(self.labels_dir))).with_suffix('.cache')
         try:
             import gc
             gc.disable()  # reduce pickle load time https://github.com/ultralytics/ultralytics/pull/1585
@@ -701,7 +694,7 @@ class MOVEDETDataset(BaseDataset):
         """Returns dictionary of labels for YOLO training."""
         self.label_files = self.img2label_paths(self.im_files)
         # import pdb;pdb.set_trace()
-        cache_path = Path(find_common_parent(set(self.labels_dir))).with_suffix('.cache')
+        cache_path = Path(combine_unique_folders(set(self.labels_dir))).with_suffix('.cache')
         try:
             import gc
             gc.disable()  # reduce pickle load time https://github.com/ultralytics/ultralytics/pull/1585
