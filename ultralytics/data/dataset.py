@@ -52,11 +52,9 @@ class YOLODataset(BaseDataset):
         super().__init__(*args, **kwargs)
         self.get_coco_image_id()
 
-    def from_coco_get_image_id(self,coco_data,im_file):
-        if coco_data:
-            for img in coco_data["images"]:
-                if im_file == img["file_name"]:
-                    return img["id"]
+    def from_coco_get_image_id(self,file_name_mapping_id,im_file):
+        if file_name_mapping_id:
+            return file_name_mapping_id.get(im_file, 0)
         return 0
     
     def get_coco_image_id(self):
@@ -65,10 +63,13 @@ class YOLODataset(BaseDataset):
         if "eval_ann_json" in self.data:
             with open(self.data["eval_ann_json"], 'r', encoding='utf-8') as coco_file:
                 coco_data = json.load(coco_file)
-
+            image_name_map_id = {}
+            for image in coco_data["images"]:
+                image_name_map_id[image["file_name"]] = image["id"]
+                
         for i,image_path in enumerate(self.im_files):
             # image_name = os.path.splitext(os.path.basename(image_path))[0]
-            self.labels[i]["image_id"] = self.from_coco_get_image_id(coco_data,os.path.basename(image_path))
+            self.labels[i]["image_id"] = self.from_coco_get_image_id(image_name_map_id,os.path.basename(image_path))
 
     def cache_labels(self, path=Path('./labels.cache')):
         """Cache dataset labels, check images and read shapes.

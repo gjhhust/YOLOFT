@@ -476,12 +476,10 @@ class DetectionValidator(BaseValidator):
             with open(file, 'a') as f:
                 f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
-    def from_coco_get_image_id(self,coco_data,im_file):
-        if coco_data:
-            for img in coco_data["images"]:
-                if im_file == img["file_name"]:
-                    return img["id"]
-            raise "No find file name in coco data"
+    def from_coco_get_image_id(self,file_name_mapping_id,im_file):
+        if file_name_mapping_id:
+            return file_name_mapping_id.get(im_file, 0)
+        return 0
     
     def pred_to_json(self, predn, filename):
         """Serialize YOLO predictions to COCO json format."""
