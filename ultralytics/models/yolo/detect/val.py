@@ -117,6 +117,9 @@ class DetectionValidator(BaseValidator):
         if self.is_coco:
             with open(self.data["eval_ann_json"], 'r', encoding='utf-8') as f:
                 self.gt_cocodata = json.load(f)
+            self.image_name_map_id = {}
+            for image in self.gt_cocodata["images"]:
+                self.image_name_map_id[image["file_name"]] = image["id"]
 
         if "classes_map" in self.data:
             self.class_map = self.data["classes_map"]
@@ -427,22 +430,20 @@ class DetectionValidator(BaseValidator):
             with open(file, 'a') as f:
                 f.write(('%g ' * len(line)).rstrip() % line + '\n')
 
-    def from_coco_get_image_id(self,coco_data,im_file):
-        if coco_data:
-            for img in coco_data["images"]:
-                if im_file == img["file_name"]:
-                    return img["id"]
-            raise "No find file name in coco data"
+    def from_coco_get_image_id(self,file_name_mapping_id,im_file):
+        if file_name_mapping_id:
+            return file_name_mapping_id.get(im_file, 0)
+        return 0
     
     def pred_to_json(self, predn, filename):
         """Serialize YOLO predictions to COCO json format."""
-        if "/" in self.gt_cocodata["images"][0]["file_name"]: #相对地址: 
+        if os.seq in self.gt_cocodata["images"][0]["file_name"] or "\\" in self.gt_cocodata["images"][0]["file_name"] or "\" in self.gt_cocodata["images"][0]["file_name"]: #相对地址: 
             path, file = os.path.split(filename)
             file_name = os.path.join(os.path.basename(path), file)
         else:
             file_name = os.path.basename(filename)
 
-        image_id = self.from_coco_get_image_id(self.gt_cocodata,file_name)
+        image_id = self.from_coco_get_image_id(self.image_name_map_id,file_name)
         box = ops.xyxy2xywh(predn[:, :4])  # xywh
         box[:, :2] -= box[:, 2:] / 2  # xy center to top-left corner
         for p, b in zip(predn.tolist(), box.tolist()):

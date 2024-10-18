@@ -10,4 +10,4 @@ from ultralytics.models import YOLOFT,YOLO
 model = YOLOFT("config/yoloft_dev/yoloftV2-s3-11-L.yaml").load("yolo11l.pt") #train yoloft-l
 # model = YOLOFT("./config/yolo/yolov8.yaml").load("yolov8l.pt") #train yolov8-l
 
-results = model.train(data="config/dataset_dev/task1_train2.yaml",cfg="config/train/orige_stream_trendloss.yaml", batch=14*2, epochs=12, imgsz=896, device=device,workers = 4)
+results = model.train(data="config/dataset_dev/task1_train2.yaml",cfg="config/train/orige_stream_trendloss.yaml", batch=14*2, epochs=12, imgsz=896, device=device,workers = 6)

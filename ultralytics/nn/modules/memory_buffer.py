@@ -653,22 +653,25 @@ class StreamBuffer(object):
             self.spatial_shapes = None
         if self.spatial_shapes is None or (not torch.equal(self.spatial_shapes,spatial_shapes)) or self.memory_fmaps is None:
             self.spatial_shapes = spatial_shapes.clone()
-            self.memory_fmaps = [f.detach().clone() for f in memory_now]
+            with torch.no_grad():
+                self.memory_fmaps = [f.detach().clone() for f in memory_now]
             
             for i in range(self.bs):
                 result_first_frame[i] = True
                 
         # init video
-        for i in range(self.bs): 
-            if result_first_frame[i]: # If current is first frame, history zero, stream initialization
-                # print("Fist init flow")
-                # update every level
-                for f in range(len(memory_now)):
-                    self.memory_fmaps[f][i] = memory_now[f][i].detach().clone()
+        with torch.no_grad():
+            for i in range(self.bs): 
+                if result_first_frame[i]: # If current is first frame, history zero, stream initialization
+                    # print("Fist init flow")
+                    # update every level
+                    for f in range(len(memory_now)):
+                        self.memory_fmaps[f][i] = memory_now[f][i].detach().clone()
 
         #save
         results_memory = [f.clone() for f in self.memory_fmaps]
-        self.memory_fmaps = [f.detach().clone() for f in memory_now]
+        with torch.no_grad():
+            self.memory_fmaps = [f.detach().clone() for f in memory_now]
         for i in range(self.bs):
             self.img_metas_memory[i] = copy.deepcopy(img_metas[i])
 

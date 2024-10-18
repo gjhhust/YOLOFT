@@ -287,7 +287,7 @@ class MOVEDETDataset(BaseDataset):
 
     def from_coco_get_image_id(self,file_name_mapping_id,im_file):
         if file_name_mapping_id:
-            return file_name_mapping_id[im_file]
+            return file_name_mapping_id.get(im_file, 0)
         return 0
     
     def video_sampler_split(self, video_image_dict, mode="all",length=100, raandom_seed=100):
