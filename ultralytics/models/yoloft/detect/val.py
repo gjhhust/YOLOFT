@@ -483,7 +483,7 @@ class DetectionValidator(BaseValidator):
     
     def pred_to_json(self, predn, filename):
         """Serialize YOLO predictions to COCO json format."""
-        if os.seq in self.gt_cocodata["images"][0]["file_name"] or "\\" in self.gt_cocodata["images"][0]["file_name"]: 
+        if os.sep in self.gt_cocodata["images"][0]["file_name"] or "\\" in self.gt_cocodata["images"][0]["file_name"]: 
             path, file = os.path.split(filename)
             file_name = os.path.join(os.path.basename(path), file)
         else:
