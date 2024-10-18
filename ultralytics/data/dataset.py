@@ -18,19 +18,11 @@ from .utils import HELP_URL, LOGGER, get_hash, img2label_paths, verify_image_lab
 
 
 def combine_unique_folders(paths):
-    # 存储所有文件夹名称
-    folder_names = []
-
-    # 遍历每个路径，提取文件夹名称
-    for path in paths:
-        # 将字符串路径转换为 Path 对象
-        path_obj = Path(path)
-        
-        # 提取路径中的所有文件夹名称
-        folder_names.extend(part for part in path_obj.parts if part)
+    folder_name_ = [path.split(os.sep) for path in paths]
+    folder_names = [folder for path in folder_name_ for folder in path if folder]
 
     # 使用 set 去重
-    unique_folder_names = set(folder_names)
+    unique_folder_names = list(sorted(set(folder_names)))
     
     # 将独特的文件夹名称用 "_" 连接起来
     combined_string = '_'.join(unique_folder_names)
@@ -146,7 +138,8 @@ class YOLODataset(BaseDataset):
         """Returns dictionary of labels for YOLO training."""
         self.label_files = self.img2label_paths(self.im_files)
         # import pdb;pdb.set_trace()
-        cache_path = Path(combine_unique_folders(set(self.labels_dir))).with_suffix('.cache')
+        cache_path = Path(combine_unique_folders([os.path.splitext(p)[0] for p in self.img_path])).with_suffix('.cache')
+        print("cache_path: ", cache_path)
         os.makedirs(os.path.dirname(cache_path),exist_ok=True)
         try:
             import gc
@@ -292,11 +285,9 @@ class MOVEDETDataset(BaseDataset):
         self.epoch = 0
         
 
-    def from_coco_get_image_id(self,coco_data,im_file):
-        if coco_data:
-            for img in coco_data["images"]:
-                if im_file == img["file_name"]:
-                    return img["id"]
+    def from_coco_get_image_id(self,file_name_mapping_id,im_file):
+        if file_name_mapping_id:
+            return file_name_mapping_id[im_file]
         return 0
     
     def video_sampler_split(self, video_image_dict, mode="all",length=100, raandom_seed=100):
@@ -435,7 +426,7 @@ class MOVEDETDataset(BaseDataset):
         '''
         # Calculate the total number of video frames for each sub-list
         total_frames = [len(video) for video in sub_videos_list]
-        print(f"now dataset total frame is: {total_frames}")
+        # print(f"now dataset total frame is: {total_frames}")
         # Calculate the total number of video frames for all sublists
         total_frames_sum = sum(total_frames)
         
@@ -482,9 +473,13 @@ class MOVEDETDataset(BaseDataset):
         
         #val
         coco_data = None
+        image_name_map_id = None
         if "eval_ann_json" in self.data:
             with open(self.data["eval_ann_json"], 'r', encoding='utf-8') as coco_file:
                 coco_data = json.load(coco_file)
+            image_name_map_id = {}
+            for image in coco_data["images"]:
+                image_name_map_id[image["file_name"]] = image["id"]
 
         # Create a dictionary that groups images by video name
         video_image_dict = {}
@@ -508,7 +503,7 @@ class MOVEDETDataset(BaseDataset):
             img_video_info.append({
                 "frame_number":frame_num,
                 "video_name":video_name,
-                "image_id":self.from_coco_get_image_id(coco_data,video_name+"/"+os.path.basename(image_path))
+                "image_id":self.from_coco_get_image_id(image_name_map_id,video_name+"/"+os.path.basename(image_path))
             })
 
         # Sort each video by frame number
@@ -696,6 +691,7 @@ class MOVEDETDataset(BaseDataset):
         self.label_files = self.img2label_paths(self.im_files)
         # import pdb;pdb.set_trace()
         cache_path = Path(combine_unique_folders([os.path.splitext(p)[0] for p in self.img_path])).with_suffix('.cache')
+        print("cache_path: ", cache_path)
         os.makedirs(os.path.dirname(cache_path),exist_ok=True)
         try:
             import gc

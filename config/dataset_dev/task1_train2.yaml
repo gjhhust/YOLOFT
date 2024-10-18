@@ -6,11 +6,11 @@ train: [/data/jiahaoguo/dataset/gaode_6/annotations/task1/task1_train2.txt, /dat
 train_labels_dir: [/data/jiahaoguo/dataset/gaode_6/annotations/yolo/, /data/jiahaoguo/dataset/gaode_all/gaode_5/annotations/yolo/]
 train_images_dir: [/data/jiahaoguo/dataset/gaode_6/images/, /data/jiahaoguo/dataset/gaode_all/gaode_5/images/]
 
-val: /data/jiahaoguo/dataset/gaode_6/annotations/mini_val/gaode_6_mini_val.txt 
+val: /data/jiahaoguo/dataset/gaode_6/annotations/task1/task1_test.txt 
 val_labels_dir: /data/jiahaoguo/dataset/gaode_6/annotations/yolo/
 val_images_dir: /data/jiahaoguo/dataset/gaode_6/images/
 
-test: /data/jiahaoguo/dataset/gaode_6/annotations/mini_val/gaode_6_mini_val.txt   
+test: /data/jiahaoguo/dataset/gaode_6/annotations/task1/task1_test.txt  
 test_labels_dir: /data/jiahaoguo/dataset/gaode_6/annotations/yolo/
 test_images_dir: /data/jiahaoguo/dataset/gaode_6/images/
 
@@ -26,7 +26,7 @@ interval: 2    # 取得帧间隔当前帧
 rho: 4
 
 #coco eval
-eval_ann_json: /data/jiahaoguo/dataset/gaode_6/annotations/task1/task1_test.txt
+eval_ann_json: /data/jiahaoguo/dataset/gaode_6/annotations/task1/task1_test.json
 classes_map: [0,1]
 # Classes
 names:

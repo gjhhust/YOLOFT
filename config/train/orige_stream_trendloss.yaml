@@ -6,7 +6,7 @@ mode: train  # (str) YOLO mode, i.e. train, val, predict, export, track, benchma
 
 # Train settings -------------------------------------------------------------------------------------------------------
 train_method: random-all #all boxnet homonet homonet-all
-train_slit: 4
+train_slit: 3
 datasampler:  streamSampler #使得生成的index和视频关联
 use_trend_loss_weight: True
 
@@ -102,7 +102,7 @@ wasserstein_loss: 10.0
 cpt_loss: 5.0  # (float) centerpoint loss gain
 mov: 0.2
 homo: 1.0
-box: 7.5  # (float) box loss gain
+box: 8.0  # (float) box loss gain
 cls: 0.5  # (float) cls loss gain (scale with pixels)
 dfl: 1.5  # (float) dfl loss gain
 pose: 12.0  # (float) pose loss gain
