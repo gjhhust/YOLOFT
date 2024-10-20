@@ -2,7 +2,7 @@
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
 
 # 科目1的第二个测试项目：使用gaode5数据+科目1的训练1，使用gaode6科目1测试
-train: [/data/jiahaoguo/dataset/gaode_6/annotations/task1/task1_train1.txt, /data/jiahaoguo/dataset/gaode_6/annotations/task0/gaode_5_filtered.txt]
+train: [/data/jiahaoguo/dataset/gaode_6/annotations/task1/task1_train1.txt, /data/jiahaoguo/dataset/gaode_all/gaode_5/annotations/yolo/gaode_5.txt]
 train_labels_dir: [/data/jiahaoguo/dataset/gaode_6/annotations/yolo/, /data/jiahaoguo/dataset/gaode_all/gaode_5/annotations/yolo/]
 train_images_dir: [/data/jiahaoguo/dataset/gaode_6/images/, /data/jiahaoguo/dataset/gaode_all/gaode_5/images/]
 

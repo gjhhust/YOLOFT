@@ -136,7 +136,6 @@ class DetectionTrainer(BaseTrainer):
         batch_list_idx = []
         cls_list = []
         save_sample_flag = False
-        
         for epoch in range(self.start_epoch, self.epochs):
             torch.cuda.empty_cache()
             self.epoch = epoch
@@ -186,8 +185,6 @@ class DetectionTrainer(BaseTrainer):
             self.tloss = None
             self.optimizer.zero_grad()
             for i, batch in pbar:
-                # if i >= 10:
-                #     break
                 self.run_callbacks('on_train_batch_start')
                 # Warmup
                 ni = i + nb * epoch

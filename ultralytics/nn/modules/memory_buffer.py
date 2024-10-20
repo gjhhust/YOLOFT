@@ -669,7 +669,7 @@ class StreamBuffer(object):
                         self.memory_fmaps[f][i] = memory_now[f][i].detach().clone()
 
         #save
-        results_memory = [f.clone() for f in self.memory_fmaps]
+        results_memory = [f.detach().clone() for f in self.memory_fmaps]
         with torch.no_grad():
             self.memory_fmaps = [f.detach().clone() for f in memory_now]
         for i in range(self.bs):
