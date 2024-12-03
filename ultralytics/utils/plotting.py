@@ -666,6 +666,7 @@ def plot_videos(video_batch_list,
         # if on_plot:
         #     on_plot(fname)
     video_writer.release()
+    print("video save done: ", os.path.join(save_dir,f"batch.mp4"))
 
 
 @plt_settings()

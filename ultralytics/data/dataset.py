@@ -417,7 +417,7 @@ class MOVEDETDataset(BaseDataset):
 
     def end_train_all_video(self):
         print(f"change data video split closed")
-        self.video_sampler_split(self.video_image_dict, mode="all")
+        self.video_sampler_split(self.video_image_dict.copy(), mode="all")
 
     def split_video_frames(self, sub_videos_list, indices, n):
         '''
@@ -1013,19 +1013,19 @@ class MOVEHomoDETDataset_stream(MOVEHomoDETDataset):
         """Sets bbox loss and builds transformations."""
         # hyp.mosaic = 0.0
         self.transforms = self.v8build_transforms(hyp) 
-        self.video_sampler_split(self.video_image_dict, mode="split_random", length=self.data["split_length"][1])
+        self.video_sampler_split(self.video_image_dict.copy(), mode="split_random", length=self.data["split_length"][1])
 
     def _train_backbone(self, hyp):
         """Sets bbox loss and builds transformations."""
         # hyp.mosaic = 1.0
         self.transforms = self.v8build_transforms(hyp) 
-        self.video_sampler_split(self.video_image_dict, mode="split_legnth", length=self.data["split_length"][0])
+        self.video_sampler_split(self.video_image_dict.copy(), mode="split_legnth", length=self.data["split_length"][0])
 
     def _train_all(self, hyp):
         """Sets bbox loss and builds transformations."""
         # hyp.mosaic = 1.0
         self.transforms = self.v8build_transforms(hyp) 
-        self.video_sampler_split(self.video_image_dict, mode="all", length=self.data["split_length"][0])
+        self.video_sampler_split(self.video_image_dict.copy(), mode="all", length=self.data["split_length"][0])
         
     def v8build_transforms(self, hyp=None):
         """Builds and appends transforms to the list."""

@@ -168,10 +168,11 @@ class DetectionValidator(BaseValidator):
             results = {**stats, **trainer.label_loss_items(self.loss.cpu() / len(self.dataloader), prefix='val')}
 
             if self.args.save_json and self.jdict:
-                with open(str(self.save_dir / f'predictions.json'), 'w') as f:
+                pred_json = self.save_dir / f'predictions_epoch{trainer.epoch}.json'
+                with open(str(pred_json), 'w') as f:
                     print(f'Saving {f.name}...')
                     json.dump(self.jdict, f)  # flatten and save
-                stats = self.eval_json(stats, print_log=True)  # update stats
+                stats = self.eval_json(stats, pred_json, print_log=True)  # update stats
                 results.update(stats)
             print('Speed: %.1fms preprocess, %.1fms inference, %.1fms loss, %.1fms postprocess per image' %
                         tuple(self.speed.values()))
@@ -182,11 +183,12 @@ class DetectionValidator(BaseValidator):
             print('Speed: %.1fms preprocess, %.1fms inference, %.1fms loss, %.1fms postprocess per image' %
                         tuple(self.speed.values()))
             if self.args.save_json and self.jdict:
-                with open(str(self.save_dir / 'predictions.json'), 'w') as f:
+                pred_json = self.save_dir / f'predictions.json'
+                with open(str(pred_json), 'w') as f:
                     print(f'Saving {f.name}...')
                     # LOGGER.info(f'Saving {f.name}...')
                     json.dump(self.jdict, f)  # flatten and save
-                stats = self.eval_json(stats)  # update stats
+                stats = self.eval_json(stats, pred_json)  # update stats
             if self.args.plots or self.args.save_json:
                 LOGGER.info(f"Results saved to {colorstr('bold', self.save_dir)}")
                 print(f"Results saved to {colorstr('bold', self.save_dir)}")
@@ -499,11 +501,11 @@ class DetectionValidator(BaseValidator):
                 'bbox': [round(x, 3) for x in b],
                 'score': round(p[4], 5)})
             
-    def eval_json(self, stats, print_log=True):
+    def eval_json(self, stats, pred_json, print_log=True):
         """Evaluates YOLO output in JSON format and returns performance statistics."""
         if self.args.save_json and self.is_coco and len(self.jdict):
             anno_json = Path(self.data['eval_ann_json'])  # annotations
-            pred_json = self.save_dir / 'predictions.json'  # predictions
+            # pred_json = self.save_dir / f'predictions_epoch{trainer.epoch}.json'  # predictions
             if print_log:
                 LOGGER.info(f'\nEvaluating pycocotools mAP using {pred_json} and {anno_json}...')
             try:  # https://github.com/cocodataset/cocoapi/blob/master/PythonAPI/pycocoEvalDemo.ipynb

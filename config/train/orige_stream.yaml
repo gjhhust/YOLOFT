@@ -17,7 +17,7 @@ patience: 50  # (int) epochs to wait for no observable improvement for early sto
 batch: 16  # (int) number of images per batch (-1 for AutoBatch)
 imgsz: 1024  # (int | list) input images size as int for train and val modes, or list[w,h] for predict and export modes
 save: True  # (bool) save train checkpoints and predict results
-save_period: 10 # (int) Save checkpoint every x epochs (disabled if < 1)
+save_period: 8 # (int) Save checkpoint every x epochs (disabled if < 1)
 cache: False  # (bool) True/ram, disk or False. Use cache for data loading
 device:  # (int | str | list, optional) device to run on, i.e. cuda device=0 or device=0,1,2,3 or device=cpu
 workers: 20  # (int) number of worker threads for data loading (per RANK if DDP)
@@ -47,7 +47,7 @@ dropout: 0.0  # (float) use dropout regularization (classify train only)
 
 # Val/Test settings ----------------------------------------------------------------------------------------------------
 val: True  # (bool) validate/test during training
-val_interval:  6 #(int)  validate/test interval during training 
+val_interval:  8 #(int)  validate/test interval during training 
 split: val  # (str) dataset split to use for validation, i.e. 'val', 'test' or 'train'
 save_json: True  # (bool) save results to JSON file
 save_hybrid: False  # (bool) save hybrid version of labels (labels + additional predictions)
