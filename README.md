@@ -3,6 +3,8 @@
 ## :loudspeaker: Introduction
 This is the official implementation of the baseline model for [XS-VID](https://gjhhust.github.io/XS-VID/) benchmark.
 
+[news]: We will soon be releasing XS-VIDv2, incorporating many new videos and scenarios, significantly expanding our dataset! Please stay tuned!
+
 ## :ferris_wheel: Dependencies
  - CUDA 11.7
  - Python 3.8
