@@ -1,0 +1,7 @@
+task: vid
+epochs: 15
+batch: 24
+imgsz: 1024
+fraction: 1.0
+name: yoloft_l
+device: "0"

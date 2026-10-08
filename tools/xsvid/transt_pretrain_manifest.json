@@ -1,0 +1,12 @@
+{
+  "path": "checkpoints/transt-state-dict.pth",
+  "sha256": "5edaceb5bc74ff171b3833fbd4ec025f18af44c81fa77241d81e300e36713e23",
+  "size_bytes": 92328650,
+  "tensor_count": 430,
+  "format": "state-dict-only; net; weights_only=True",
+  "source_path": "checkpoints/transt.pth",
+  "source_sha256": "b4460d6fa4e3b4ab0bc119602953e3cacdfa770907e13ff1398f652145cd8fc0",
+  "source_size_bytes": 92268675,
+  "all_tensors_bit_identical": true,
+  "purpose": "Remove serialization dependency on ltr.admin.model_constructor.NetConstructor"
+}

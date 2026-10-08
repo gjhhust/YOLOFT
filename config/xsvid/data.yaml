@@ -1,0 +1,20 @@
+# Set path to the prepared dataset root; the downloader writes legacy_yoloft.yaml automatically.
+path: /path/to/XS-VID
+train: splits/legacy_train.txt
+val: splits/legacy_test.txt
+test: splits/legacy_test.txt
+labels_dir: labels
+images_dir: images
+StreamVideoSampler: true
+train_video_length: [2]
+train_video_interval: 1
+eval_ann_json: annotations/protocols/paper_detection_test.json
+classes_map: [0, 1, 2, 3, 4, 5, 6]
+names:
+  0: bicycle-static
+  1: bicycle-person
+  2: car
+  3: person
+  4: ignore
+  5: truck
+  6: boat

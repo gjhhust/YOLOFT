@@ -1,0 +1,13 @@
+task: sot
+tag: unified_sot
+epochs: 40
+samples: 12000
+bv: 24
+lr: 0.0001
+lr_bb: 0.0
+unfreeze_bb: 1
+feat_mode: fuse918
+z: 128
+x: 256
+no_pretrain: false
+gpu: "0"

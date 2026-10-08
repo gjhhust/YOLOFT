@@ -1,0 +1,15 @@
+task: mot
+tag: unified_mot
+epochs: 8
+samples: 6000
+bv: 8
+lr: 0.001
+intervals: [1, 2, 3]
+emb_stride: 4
+embed_dim: 256
+pre_mstf: 0
+emb_src_hi: 20
+feat_mode: simple
+tau: 0.07
+seed: 0
+gpu: "0"

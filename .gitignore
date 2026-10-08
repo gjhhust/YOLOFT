@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.cache
+*.egg-info/
+build/
+dist/
+*.so
+.venv/
+.env
+runs/
+outputs/
+*.pt
+*.pth
+*.pkl

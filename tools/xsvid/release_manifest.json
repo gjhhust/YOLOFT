@@ -1,0 +1,34 @@
+{
+  "model_repository": "lanlanlan23/YOLOFT-XSVID-v2-weights",
+  "release_version": "current",
+  "weights": {
+    "vid.pt": {
+      "task": "vid",
+      "file_sha256": "214a4fcb277ac527ee7c83718fc28d7dac8464f7fb82bb8a6794049206a1caa4",
+      "tensor_sha256": "70c5cac9d1cca9c41f0ad9abfcbababd9a6656de354f038d3768858ff37b2936",
+      "tensor_count": 805
+    },
+    "unified_mot.pt": {
+      "task": "unified_mot",
+      "file_sha256": "e507e8b5568f35913c2fc0e137ff421a012f61a689428b5b7009700aae5189b4",
+      "tensor_sha256": "f8f72a170cc421605dc61aa3ff2790cef2597dcf85f864c946f3d3cfe608e83c",
+      "tensor_count": 846
+    },
+    "unified_sot.pt": {
+      "task": "unified_sot",
+      "file_sha256": "4cb657a1a9305ae4abbbcfa010b9173d7ec809af39419fea80edd4a82d58f4d9",
+      "tensor_sha256": "30a35f6446e09816bb6e89074e2b79e5504429b9c5512a0cf8ba7e847ec67f0a",
+      "tensor_count": 977
+    }
+  },
+  "code_version": "tpami-release",
+  "code_file_sha256": {
+    "tools/xsvid/checkpoint_utils.py": "a1847389ab889392413af6ea84ef952ef271abab1aae08dc7b55073c83699c5c",
+    "ultralytics/nn/tasks.py": "17e808c4c09c1bfbab2e43b20014cac3fe279d7a751e112c741b9b45c83e8708",
+    "ultralytics/nn/omni.py": "972c566feb2529f8e3e7b2ed21ad99d061f582fa045ded7a02c4f5c5d718652d",
+    "ultralytics/nn/sot_transt.py": "2eeef19b05715f95839f96093a0c2a856cb3bfcbe7c5187b1b39602d6177c603",
+    "ultralytics/nn/modules/block.py": "e7ad06347a9e84e1c6c0dede7010bef8c3646cb2ab39715a7add532424775263",
+    "ultralytics/nn/modules/conv.py": "e52e76081f49e3313a7b961b102a72f4317fbd958aefaabd3863e49035ffe44a",
+    "ultralytics/utils/ops.py": "8cb2f5b43360ef7b3a7353ae78f89b88f86623e2804e4d2142eb076f8ea21edb"
+  }
+}

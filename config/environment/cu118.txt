@@ -1,0 +1,5 @@
+torch==2.4.0+cu118
+torchvision==0.19.0+cu118
+numpy==1.24.4
+opencv-python==4.10.0.84
+motmetrics==1.4.0

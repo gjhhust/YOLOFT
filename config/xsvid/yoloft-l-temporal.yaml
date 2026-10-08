@@ -1,0 +1,47 @@
+# Ultralytics YOLO, AGPL-3.0 license
+# YOLOFT-L temporal model
+
+nc: 7 # number of classes (XS-VID)
+scales: # [depth, width, max_channels, history_dim1, history_dim2, history_dim3]
+  # history_dim* MUST equal each MSTFv1 net_dim = int((x1+x2)*0.5) = 384, 384, 512
+  l: [1.00, 1.00, 512, 384, 384, 512]
+
+# YOLOv8.0n backbone (with temporal InputData / List_Split prelude)
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, InputData, [3, 384, 384, 512]] # 0  input data dim (img + 3 history feats)
+  - [0, 1, List_Split, [1]]                # 1  history feat 1/8   (P3, dim 384)
+  - [0, 1, List_Split, [2]]                # 2  history feat 1/16  (P4, dim 384)
+  - [0, 1, List_Split, [3]]                # 3  history feat 1/32  (P5, dim 512)
+  - [0, 1, List_Split, [0]]                # 4  image
+
+  - [-1, 1, Conv, [64, 3, 2]]              # 5-P1/2
+  - [-1, 1, Conv, [128, 3, 2]]             # 6-P2/4
+  - [-1, 3, C2f, [128, True]]              # 7
+  - [-1, 1, Conv, [256, 3, 2]]             # 8-P3/8
+  - [-1, 6, C2f_DCNV3, [256, True]]        # 9
+  - [-1, 1, Conv, [512, 3, 2]]             # 10-P4/16
+  - [-1, 6, C2f_DCNV3, [512, True]]        # 11
+  - [-1, 1, Conv, [1024, 3, 2]]            # 12-P5/32
+  - [-1, 3, C2f_DCNV3, [1024, True]]       # 13
+  - [-1, 1, SPPF, [1024, 5]]               # 14
+
+# YOLOv8.0n head
+head:
+  - [-1, 1, DySample, [2]]                          # 15  1/32->1/16
+  - [[-1, 11], 1, Concat, [1]]                      # 16  cat backbone P4
+  - [-1, 3, C2f, [512]]                             # 17
+
+  - [-1, 1, DySample, [2]]                          # 18  1/16->1/8
+  - [[-1, 9, 1], 1, MSTFv1, [1, "conv3d", 0.5]]     # 19  cat backbone P3 + hist1  (net_dim 384)
+  - [-1, 3, C2f, [256]]                             # 20  (P3/8-small)
+
+  - [-1, 1, Conv, [256, 3, 2]]                      # 21  1/8->1/16
+  - [[-1, 17, 2], 1, MSTFv1, [1, "conv3d", 0.5]]    # 22  cat head P4 + hist2  (net_dim 384)
+  - [-1, 3, C2f, [512]]                             # 23  (P4/16-medium)
+
+  - [-1, 1, Conv, [512, 3, 2]]                      # 24  1/16->1/32
+  - [[-1, 14, 3], 1, MSTFv1, [1, "conv3d", 0.5]]    # 25  cat head P5 + hist3  (net_dim 512)
+  - [-1, 3, C2f, [1024]]                            # 26  (P5/32-large)
+
+  - [[20, 23, 26], 1, Detect, [nc]]                 # 27  Detect(P3, P4, P5)
